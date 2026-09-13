@@ -197,6 +197,11 @@ function translateAuthError(msg){
 
 $('#logout').onclick = async () => { await sb.auth.signOut(); };
 
+// Supabase can fire onAuthStateChange more than once for the same session
+// (e.g. INITIAL_SESSION followed by SIGNED_IN, or a token refresh). Guard
+// against loading/creating the user's data more than once per session so we
+// never insert duplicate starter rows.
+let loadedForUserId = null;
 sb.auth.onAuthStateChange((_event, session) => {
   currentUser = session ? session.user : null;
   if (currentUser) {
@@ -204,8 +209,12 @@ sb.auth.onAuthStateChange((_event, session) => {
     appWrap.hidden = false;
     $('#userEmail').textContent = currentUser.email;
     authForm.reset();
-    loadUserData();
+    if (loadedForUserId !== currentUser.id) {
+      loadedForUserId = currentUser.id;
+      loadUserData();
+    }
   } else {
+    loadedForUserId = null;
     appWrap.hidden = true;
     authWrap.hidden = false;
   }
