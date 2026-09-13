@@ -1,87 +1,340 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mi presupuesto</title>
-  <style>
-    :root { --ink:#19243a; --muted:#6d7890; --line:#e4e9f1; --blue:#3567ee; --green:#17a876; --soft:#f5f7fb; --danger:#cf4f5b; }
-    * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; color:var(--ink); font:16px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background:linear-gradient(135deg,#eef3ff 0%,#f9fbff 45%,#edfff8 100%); }
-    .wrap { width:min(1040px,calc(100% - 32px)); margin:0 auto; padding:48px 0 64px; }
-    header { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:30px; }
-    h1 { margin:0; font-size:clamp(2rem,5vw,3.25rem); letter-spacing:-.055em; }
-    .sub { margin:7px 0 0; color:var(--muted); }
-    .save { color:var(--green); font-size:.88rem; font-weight:700; background:#e5f8f0; padding:7px 11px; border-radius:99px; white-space:nowrap; }
-    .income { background:var(--ink); color:white; border-radius:24px; padding:28px; display:grid; grid-template-columns:1.1fr .9fr; gap:24px; box-shadow:0 18px 40px #24396522; }
-    .income label, .row label { display:block; font-weight:700; font-size:.9rem; }
-    .income label { color:#cdd8ee; margin-bottom:10px; }
-    .income input { width:100%; border:1px solid #7888a5; background:white; color:#111827; border-radius:12px; font-size:1.5rem; font-weight:750; padding:13px 15px; outline:none; }
-    .income input::placeholder { color:#7a8496; }
-    input:focus { border-color:var(--blue); box-shadow:0 0 0 3px #3567ee22; }
-    .remaining { border-left:1px solid #ffffff2e; padding-left:25px; align-self:center; }
-    .remaining small { display:block; color:#cdd8ee; font-weight:700; margin-bottom:2px; }
-    .remaining strong { display:block; font-size:2.35rem; letter-spacing:-.06em; overflow-wrap:anywhere; }
-    .remaining.negative strong { color:#ffacb5; }
-    .card { background:#fff; border:1px solid #e9edf4; border-radius:24px; margin-top:22px; padding:28px; box-shadow:0 12px 32px #2439650e; }
-    .card-top { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:19px; }
-    h2 { font-size:1.25rem; margin:0; letter-spacing:-.025em; }
-    button { border:0; border-radius:10px; padding:10px 14px; font:inherit; font-weight:750; cursor:pointer; transition:transform .15s,background .15s; }
-    button:hover { transform:translateY(-1px); }
-    .add { color:#fff; background:var(--blue); }
-    .expenses { display:grid; gap:10px; }
-    .row { display:grid; grid-template-columns:42px minmax(100px,1fr) minmax(112px,180px) 38px; gap:12px; align-items:center; padding:11px; border:1px solid var(--line); border-radius:14px; }
-    .emoji { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:var(--soft); font-size:1.1rem; }
-    .row input { min-width:0; width:100%; padding:9px 10px; border:1px solid transparent; background:#f8faff; border-radius:8px; color:var(--ink); font:inherit; font-weight:650; outline:none; }
-    .row input:focus { background:white; border-color:var(--blue); }
-    .row .amount { text-align:right; }
-    .remove { width:34px; height:34px; padding:0; color:#8a94a8; background:transparent; font-size:1.3rem; }
-    .remove:hover { color:var(--danger); background:#fff1f3; }
-    .summary { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:22px; }
-    .metric { padding:17px; background:var(--soft); border-radius:15px; }
-    .metric span { display:block; color:var(--muted); font-size:.85rem; font-weight:700; }
-    .metric strong { display:block; margin-top:2px; font-size:1.45rem; letter-spacing:-.04em; }
-    .bar { height:10px; overflow:hidden; background:#e9edf5; border-radius:99px; margin-top:20px; }
-    .bar i { display:block; height:100%; width:0%; border-radius:99px; background:linear-gradient(90deg,var(--blue),#6f8dff); transition:width .3s; }
-    .hint { color:var(--muted); font-size:.88rem; margin:19px 0 0; }
-    .reset { margin-top:14px; color:var(--muted); background:transparent; padding:7px 0; font-size:.86rem; text-decoration:underline; }
-    @media (max-width:620px) { .wrap { padding-top:28px; } header,.income { display:block; } .save { display:inline-block; margin-top:15px; } .remaining { border:0; border-top:1px solid #ffffff2e; padding:20px 0 0; margin-top:20px; } .card { padding:20px; } .row { grid-template-columns:37px 1fr 34px; gap:8px; } .row .amount { grid-column:2; grid-row:2; text-align:left; } .summary { grid-template-columns:1fr; } }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi presupuesto</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root { --ink:#19243a; --muted:#6d7890; --line:#e4e9f1; --blue:#3567ee; --green:#17a876; --soft:#f5f7fb; --danger:#cf4f5b; }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; color:var(--ink); font:16px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background:linear-gradient(135deg,#eef3ff 0%,#f9fbff 45%,#edfff8 100%); }
+.wrap { width:min(1040px,calc(100% - 32px)); margin:0 auto; padding:48px 0 64px; }
+[hidden] { display:none !important; }
+header { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:30px; }
+h1 { margin:0; font-size:clamp(2rem,5vw,3.25rem); letter-spacing:-.055em; }
+.sub { margin:7px 0 0; color:var(--muted); }
+.save { color:var(--green); font-size:.88rem; font-weight:700; background:#e5f8f0; padding:7px 11px; border-radius:99px; white-space:nowrap; }
+.save.saving { color:#a3762c; background:#fdf3e2; }
+.save.error { color:var(--danger); background:#fdecee; }
+.userbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.userbar .email { color:var(--muted); font-size:.85rem; font-weight:600; }
+.logout { color:var(--muted); background:#eef1f7; padding:8px 13px; font-size:.85rem; }
+.logout:hover { color:var(--danger); }
+.income { background:var(--ink); color:white; border-radius:24px; padding:28px; display:grid; grid-template-columns:1.1fr .9fr; gap:24px; box-shadow:0 18px 40px #24396522; }
+.income label, .row label { display:block; font-weight:700; font-size:.9rem; }
+.income label { color:#cdd8ee; margin-bottom:10px; }
+.income input { width:100%; border:1px solid #7888a5; background:white; color:#111827; border-radius:12px; font-size:1.5rem; font-weight:750; padding:13px 15px; outline:none; }
+.income input::placeholder { color:#7a8496; }
+input:focus { border-color:var(--blue); box-shadow:0 0 0 3px #3567ee22; }
+.remaining { border-left:1px solid #ffffff2e; padding-left:25px; align-self:center; }
+.remaining small { display:block; color:#cdd8ee; font-weight:700; margin-bottom:2px; }
+.remaining strong { display:block; font-size:2.35rem; letter-spacing:-.06em; overflow-wrap:anywhere; }
+.remaining.negative strong { color:#ffacb5; }
+.card { background:#fff; border:1px solid #e9edf4; border-radius:24px; margin-top:22px; padding:28px; box-shadow:0 12px 32px #2439650e; }
+.card-top { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:19px; }
+h2 { font-size:1.25rem; margin:0; letter-spacing:-.025em; }
+button { border:0; border-radius:10px; padding:10px 14px; font:inherit; font-weight:750; cursor:pointer; transition:transform .15s,background .15s; }
+button:hover { transform:translateY(-1px); }
+button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+.add { color:#fff; background:var(--blue); }
+.expenses { display:grid; gap:10px; }
+.row { display:grid; grid-template-columns:42px minmax(100px,1fr) minmax(112px,180px) 38px; gap:12px; align-items:center; padding:11px; border:1px solid var(--line); border-radius:14px; }
+.emoji { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:var(--soft); font-size:1.1rem; }
+.row input { min-width:0; width:100%; padding:9px 10px; border:1px solid transparent; background:#f8faff; border-radius:8px; color:var(--ink); font:inherit; font-weight:650; outline:none; }
+.row input:focus { background:white; border-color:var(--blue); }
+.row .amount { text-align:right; }
+.remove { width:34px; height:34px; padding:0; color:#8a94a8; background:transparent; font-size:1.3rem; }
+.remove:hover { color:var(--danger); background:#fff1f3; }
+.summary { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:22px; }
+.metric { padding:17px; background:var(--soft); border-radius:15px; }
+.metric span { display:block; color:var(--muted); font-size:.85rem; font-weight:700; }
+.metric strong { display:block; margin-top:2px; font-size:1.45rem; letter-spacing:-.04em; }
+.bar { height:10px; overflow:hidden; background:#e9edf5; border-radius:99px; margin-top:20px; }
+.bar i { display:block; height:100%; width:0%; border-radius:99px; background:linear-gradient(90deg,var(--blue),#6f8dff); transition:width .3s; }
+.hint { color:var(--muted); font-size:.88rem; margin:19px 0 0; }
+.reset { margin-top:14px; color:var(--muted); background:transparent; padding:7px 0; font-size:.86rem; text-decoration:underline; }
+/* auth */
+.authWrap { width:min(420px,calc(100% - 32px)); margin:0 auto; padding:64px 0; }
+.authCard { background:#fff; border:1px solid #e9edf4; border-radius:24px; padding:32px; box-shadow:0 12px 32px #2439650e; }
+.authTabs { display:flex; gap:8px; margin:22px 0 18px; background:var(--soft); border-radius:12px; padding:4px; }
+.authTab { flex:1; background:transparent; color:var(--muted); border-radius:9px; padding:9px; font-size:.92rem; }
+.authTab.active { background:#fff; color:var(--ink); box-shadow:0 2px 8px #2439651a; }
+#authForm { display:grid; gap:14px; }
+#authForm label { font-weight:700; font-size:.88rem; color:var(--muted); display:block; }
+#authForm input { width:100%; margin-top:6px; border:1px solid var(--line); background:#f8faff; border-radius:10px; padding:11px 13px; font:inherit; outline:none; }
+#authForm input:focus { background:white; border-color:var(--blue); }
+#authSubmit { width:100%; padding:13px; font-size:1rem; }
+.authMsg { min-height:20px; margin:14px 0 0; font-size:.88rem; color:var(--muted); }
+.authMsg.error { color:var(--danger); }
+.authMsg.ok { color:var(--green); }
+.authNote { color:var(--muted); font-size:.82rem; margin-top:18px; line-height:1.5; }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid #cdd8ee; border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; vertical-align:-3px; margin-right:6px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+@media (max-width:620px) { .wrap { padding-top:28px; } header,.income { display:block; } .save { display:inline-block; margin-top:15px; } .remaining { border:0; border-top:1px solid #ffffff2e; padding:20px 0 0; margin-top:20px; } .card { padding:20px; } .row { grid-template-columns:37px 1fr 34px; gap:8px; } .row .amount { grid-column:2; grid-row:2; text-align:left; } .summary { grid-template-columns:1fr; } }
+</style>
 </head>
 <body>
-  <main class="wrap">
-    <header>
-      <div><h1>Mi presupuesto</h1><p class="sub">Organiza tu salario y decide a dónde va cada euro.</p></div>
-      <div class="save" id="saveStatus">✓ Guardado en este dispositivo</div>
-    </header>
-    <section class="income">
-      <div><label for="salary">Salario mensual disponible</label><input id="salary" type="number" min="0" step="0.01" placeholder="Ej. 1800" inputmode="decimal" aria-label="Salario mensual"></div>
-      <div class="remaining" id="remainingBox"><small>Te queda después de gastos</small><strong id="remaining">0,00 €</strong></div>
-    </section>
-    <section class="card">
-      <div class="card-top"><h2>Tus gastos mensuales</h2><button class="add" id="addExpense">+ Añadir gasto</button></div>
-      <div class="expenses" id="expenses"></div>
-      <div class="summary"><div class="metric"><span>Total de gastos</span><strong id="total">0,00 €</strong></div><div class="metric"><span>Porcentaje del salario</span><strong id="percentage">0 %</strong></div></div>
-      <div class="bar" aria-label="Porcentaje del salario destinado a gastos"><i id="bar"></i></div>
-      <p class="hint">Escribe el nombre y el importe de todos tus gastos: comida, renta, transporte, ocio, deudas o cualquier otro.</p>
-      <button class="reset" id="reset">Restablecer presupuesto</button>
-    </section>
-  </main>
-  <script>
-    const defaults=[['🏠','Renta / hipoteca','700'],['🛒','Comida','300'],['🚆','Transporte','80'],['💡','Facturas','120'],['✨','Ocio','100']];
-    const $=s=>document.querySelector(s), expenses=$('#expenses');
-    let data=JSON.parse(localStorage.getItem('mi-presupuesto-v1')||'null') || {salary:'',expenses:defaults};
-    const money=n=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n||0);
-    function persist(){ localStorage.setItem('mi-presupuesto-v1',JSON.stringify(data)); $('#saveStatus').textContent='✓ Guardado en este dispositivo'; }
-    function render(){
-      $('#salary').value=data.salary; expenses.innerHTML='';
-      data.expenses.forEach((e,i)=>{ const row=document.createElement('div'); row.className='row'; row.innerHTML=`<span class="emoji">${e[0]||'💸'}</span><input class="name" value="${escapeHtml(e[1])}" aria-label="Nombre del gasto"><input class="amount" type="number" min="0" step="0.01" value="${e[2]}" placeholder="0,00" inputmode="decimal" aria-label="Importe del gasto"><button class="remove" title="Eliminar gasto" aria-label="Eliminar gasto">×</button>`; row.querySelector('.name').oninput=ev=>{data.expenses[i][1]=ev.target.value;persist()}; row.querySelector('.amount').oninput=ev=>{data.expenses[i][2]=ev.target.value;persist();calculate()}; row.querySelector('.remove').onclick=()=>{data.expenses.splice(i,1);persist();render()}; expenses.append(row); }); calculate(); }
-    function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
-    function calculate(){ const salary=Number(data.salary)||0,total=data.expenses.reduce((sum,e)=>sum+(Number(e[2])||0),0),left=salary-total,pct=salary?total/salary*100:0; $('#total').textContent=money(total); $('#percentage').textContent=`${Math.round(pct)} %`; $('#remaining').textContent=money(left); $('#remainingBox').classList.toggle('negative',left<0); $('#bar').style.width=`${Math.min(pct,100)}%`; }
-    $('#salary').oninput=e=>{data.salary=e.target.value;persist();calculate()};
-    $('#addExpense').onclick=()=>{data.expenses.push(['💸','Nuevo gasto','']);persist();render(); expenses.lastElementChild.querySelector('.name').focus()};
-    $('#reset').onclick=()=>{if(confirm('¿Quieres borrar el presupuesto guardado y empezar de nuevo?')){data={salary:'',expenses:defaults.map(x=>[...x])};persist();render();}};
-    render();
-  </script>
+
+<main class="authWrap" id="authWrap" hidden>
+  <section class="authCard">
+    <h1 style="font-size:2rem">Mi presupuesto</h1>
+    <p class="sub">Inicia sesión para guardar tus gastos de forma segura en la nube. Solo tú puedes ver tus datos.</p>
+    <div class="authTabs">
+      <button type="button" class="authTab active" id="tabLogin">Iniciar sesión</button>
+      <button type="button" class="authTab" id="tabSignup">Crear cuenta</button>
+    </div>
+    <form id="authForm">
+      <label>Correo electrónico
+        <input type="email" id="authEmail" required autocomplete="email" placeholder="tucorreo@ejemplo.com">
+      </label>
+      <label>Contraseña
+        <input type="password" id="authPassword" required autocomplete="current-password" minlength="6" placeholder="Mínimo 6 caracteres">
+      </label>
+      <button type="submit" class="add" id="authSubmit">Iniciar sesión</button>
+    </form>
+    <p class="authMsg" id="authMsg"></p>
+    <p class="authNote">Tus datos se guardan de forma segura y cifrada en Supabase. Cada persona solo puede ver y modificar su propio presupuesto (protegido por Row Level Security).</p>
+  </section>
+</main>
+
+<main class="wrap" id="appWrap" hidden>
+<header>
+<div><h1>Mi presupuesto</h1><p class="sub">Organiza tu salario y decide a dónde va cada euro.</p></div>
+<div class="userbar">
+  <span class="save" id="saveStatus">✓ Guardado en la nube</span>
+  <span class="email" id="userEmail"></span>
+  <button class="logout" id="logout">Cerrar sesión</button>
+</div>
+</header>
+<section class="income">
+<div><label for="salary">Salario mensual disponible</label><input id="salary" type="number" min="0" step="0.01" placeholder="Ej. 1800" inputmode="decimal" aria-label="Salario mensual"></div>
+<div class="remaining" id="remainingBox"><small>Te queda después de gastos</small><strong id="remaining">0,00 €</strong></div>
+</section>
+<section class="card">
+<div class="card-top"><h2>Tus gastos mensuales</h2><button class="add" id="addExpense">+ Añadir gasto</button></div>
+<div class="expenses" id="expenses"></div>
+<div class="summary"><div class="metric"><span>Total de gastos</span><strong id="total">0,00 €</strong></div><div class="metric"><span>Porcentaje del salario</span><strong id="percentage">0 %</strong></div></div>
+<div class="bar" aria-label="Porcentaje del salario destinado a gastos"><i id="bar"></i></div>
+<p class="hint">Escribe el nombre y el importe de todos tus gastos: comida, renta, transporte, ocio, deudas o cualquier otro.</p>
+<button class="reset" id="reset">Restablecer presupuesto</button>
+</section>
+</main>
+
+<script>
+// ---- Supabase setup ----
+const SUPABASE_URL = 'https://nhhskvauwdudhojjvodi.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_0EouCOgtpq146qgFsMusDg_bvQh58MI';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const $ = s => document.querySelector(s);
+const authWrap = $('#authWrap'), appWrap = $('#appWrap');
+const authForm = $('#authForm'), authEmail = $('#authEmail'), authPassword = $('#authPassword');
+const authSubmit = $('#authSubmit'), authMsg = $('#authMsg');
+const tabLogin = $('#tabLogin'), tabSignup = $('#tabSignup');
+const expensesEl = $('#expenses');
+
+let mode = 'login'; // 'login' | 'signup'
+let currentUser = null;
+let salary = 0;
+let expenses = []; // [{id, emoji, name, amount}]
+let saveStatusTimer = null;
+
+const money = n => new Intl.NumberFormat('es-ES', { style:'currency', currency:'EUR' }).format(n || 0);
+function escapeHtml(s){ return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+function debounce(fn, ms){ let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }; }
+
+// ---- Auth UI ----
+function setAuthMode(next){
+  mode = next;
+  tabLogin.classList.toggle('active', mode === 'login');
+  tabSignup.classList.toggle('active', mode === 'signup');
+  authSubmit.textContent = mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta';
+  authPassword.autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+  authMsg.textContent = '';
+  authMsg.className = 'authMsg';
+}
+tabLogin.onclick = () => setAuthMode('login');
+tabSignup.onclick = () => setAuthMode('signup');
+
+authForm.onsubmit = async (e) => {
+  e.preventDefault();
+  const email = authEmail.value.trim();
+  const password = authPassword.value;
+  authSubmit.disabled = true;
+  authMsg.className = 'authMsg';
+  authMsg.innerHTML = '<span class="spinner"></span>Un momento…';
+  try {
+    if (mode === 'login') {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      // onAuthStateChange handles the rest
+    } else {
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if (error) throw error;
+      if (!data.session) {
+        authMsg.textContent = 'Cuenta creada. Revisa tu correo y confirma tu cuenta para poder iniciar sesión.';
+        authMsg.className = 'authMsg ok';
+      }
+    }
+  } catch (err) {
+    authMsg.textContent = translateAuthError(err.message);
+    authMsg.className = 'authMsg error';
+  } finally {
+    authSubmit.disabled = false;
+  }
+};
+
+function translateAuthError(msg){
+  if (!msg) return 'Ha ocurrido un error. Inténtalo de nuevo.';
+  if (/invalid login credentials/i.test(msg)) return 'Correo o contraseña incorrectos.';
+  if (/already registered|already exists/i.test(msg)) return 'Ya existe una cuenta con ese correo. Prueba a iniciar sesión.';
+  if (/password.*(least|characters)/i.test(msg)) return 'La contraseña debe tener al menos 6 caracteres.';
+  if (/email.*invalid/i.test(msg)) return 'Ese correo no parece válido.';
+  if (/rate limit/i.test(msg)) return 'Demasiados intentos. Espera un momento y vuelve a intentarlo.';
+  return msg;
+}
+
+$('#logout').onclick = async () => { await sb.auth.signOut(); };
+
+sb.auth.onAuthStateChange((_event, session) => {
+  currentUser = session ? session.user : null;
+  if (currentUser) {
+    authWrap.hidden = true;
+    appWrap.hidden = false;
+    $('#userEmail').textContent = currentUser.email;
+    authForm.reset();
+    loadUserData();
+  } else {
+    appWrap.hidden = true;
+    authWrap.hidden = false;
+  }
+});
+
+// ---- Data loading ----
+const defaults = [['🏠','Renta / hipoteca','700'],['🛒','Comida','300'],['🚆','Transporte','80'],['💡','Facturas','120'],['✨','Ocio','100']];
+
+async function loadUserData(){
+  setStatus('Cargando…', 'saving');
+  const uid = currentUser.id;
+
+  let { data: budget } = await sb.from('budgets').select('*').eq('user_id', uid).maybeSingle();
+  let { data: rows } = await sb.from('expenses').select('*').eq('user_id', uid).order('created_at', { ascending: true });
+
+  if (!budget && (!rows || rows.length === 0)) {
+    // First time this user logs in: create a starter budget for them.
+    await sb.from('budgets').insert({ user_id: uid, salary: 0 });
+    const toInsert = defaults.map(([emoji, name, amount]) => ({ user_id: uid, emoji, name, amount: Number(amount) }));
+    const { data: inserted } = await sb.from('expenses').insert(toInsert).select();
+    budget = { salary: 0 };
+    rows = inserted || [];
+  } else if (!budget) {
+    await sb.from('budgets').insert({ user_id: uid, salary: 0 });
+    budget = { salary: 0 };
+  }
+
+  salary = budget.salary || 0;
+  expenses = (rows || []).map(r => ({ id: r.id, emoji: r.emoji || '💸', name: r.name || '', amount: r.amount || 0 }));
+  render();
+  setStatus('✓ Guardado en la nube', 'ok');
+}
+
+function setStatus(text, kind){
+  const el = $('#saveStatus');
+  el.textContent = text;
+  el.className = 'save' + (kind === 'saving' ? ' saving' : kind === 'error' ? ' error' : '');
+  clearTimeout(saveStatusTimer);
+  if (kind === 'ok') {
+    saveStatusTimer = setTimeout(() => { el.textContent = '✓ Guardado en la nube'; el.className = 'save'; }, 1500);
+  }
+}
+
+// ---- Render ----
+function render(){
+  $('#salary').value = salary || '';
+  expensesEl.innerHTML = '';
+  expenses.forEach((e, i) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<span class="emoji">${e.emoji || '💸'}</span><input class="name" value="${escapeHtml(e.name)}" aria-label="Nombre del gasto"><input class="amount" type="number" min="0" step="0.01" value="${e.amount}" placeholder="0,00" inputmode="decimal" aria-label="Importe del gasto"><button class="remove" title="Eliminar gasto" aria-label="Eliminar gasto">×</button>`;
+    row.querySelector('.name').oninput = ev => { expenses[i].name = ev.target.value; saveExpenseDebounced(expenses[i]); };
+    row.querySelector('.amount').oninput = ev => { expenses[i].amount = ev.target.value; calculate(); saveExpenseDebounced(expenses[i]); };
+    row.querySelector('.remove').onclick = () => removeExpense(i);
+    expensesEl.append(row);
+  });
+  calculate();
+}
+
+function calculate(){
+  const s = Number(salary) || 0;
+  const total = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const left = s - total, pct = s ? total / s * 100 : 0;
+  $('#total').textContent = money(total);
+  $('#percentage').textContent = `${Math.round(pct)} %`;
+  $('#remaining').textContent = money(left);
+  $('#remainingBox').classList.toggle('negative', left < 0);
+  $('#bar').style.width = `${Math.min(pct, 100)}%`;
+}
+
+// ---- Persistence ----
+const saveSalaryDebounced = debounce(async () => {
+  if (!currentUser) return;
+  setStatus('Guardando…', 'saving');
+  const { error } = await sb.from('budgets').update({ salary: Number(salary) || 0, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
+  setStatus(error ? 'Error al guardar' : '✓ Guardado en la nube', error ? 'error' : 'ok');
+}, 500);
+
+const saveExpenseDebounced = debounce(async (expense) => {
+  if (!currentUser) return;
+  setStatus('Guardando…', 'saving');
+  const { error } = await sb.from('expenses').update({ name: expense.name, amount: Number(expense.amount) || 0 }).eq('id', expense.id);
+  setStatus(error ? 'Error al guardar' : '✓ Guardado en la nube', error ? 'error' : 'ok');
+}, 500);
+
+$('#salary').oninput = e => { salary = e.target.value; calculate(); saveSalaryDebounced(); };
+
+$('#addExpense').onclick = async () => {
+  if (!currentUser) return;
+  setStatus('Guardando…', 'saving');
+  const { data, error } = await sb.from('expenses').insert({ user_id: currentUser.id, emoji: '💸', name: 'Nuevo gasto', amount: 0 }).select().single();
+  if (error) { setStatus('Error al guardar', 'error'); return; }
+  expenses.push({ id: data.id, emoji: data.emoji, name: data.name, amount: data.amount });
+  render();
+  setStatus('✓ Guardado en la nube', 'ok');
+  const last = expensesEl.lastElementChild;
+  if (last) last.querySelector('.name').focus();
+};
+
+async function removeExpense(i){
+  const e = expenses[i];
+  expenses.splice(i, 1);
+  render();
+  setStatus('Guardando…', 'saving');
+  const { error } = await sb.from('expenses').delete().eq('id', e.id);
+  setStatus(error ? 'Error al guardar' : '✓ Guardado en la nube', error ? 'error' : 'ok');
+}
+
+$('#reset').onclick = async () => {
+  if (!currentUser) return;
+  if (!confirm('¿Quieres borrar el presupuesto guardado y empezar de nuevo?')) return;
+  setStatus('Guardando…', 'saving');
+  await sb.from('expenses').delete().eq('user_id', currentUser.id);
+  await sb.from('budgets').update({ salary: 0 }).eq('user_id', currentUser.id);
+  const toInsert = defaults.map(([emoji, name, amount]) => ({ user_id: currentUser.id, emoji, name, amount: Number(amount) }));
+  const { data: inserted } = await sb.from('expenses').insert(toInsert).select();
+  salary = 0;
+  expenses = (inserted || []).map(r => ({ id: r.id, emoji: r.emoji, name: r.name, amount: r.amount }));
+  render();
+  setStatus('✓ Guardado en la nube', 'ok');
+};
+
+// ---- Boot ----
+(async function init(){
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { authWrap.hidden = false; }
+  // onAuthStateChange fires immediately with the current session too,
+  // so it takes care of showing the right screen and loading data.
+})();
+</script>
 </body>
 </html>
