@@ -120,7 +120,7 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 </div>
 </header>
 <section class="income">
-<div><label for="salary">Salario mensual disponible</label><input id="salary" type="number" min="0" step="0.01" placeholder="Ej. 1800" inputmode="decimal" aria-label="Salario mensual"></div>
+<div><label for="salary">Salario mensual disponible</label><input id="salary" type="text" placeholder="Ej. 1800,50" inputmode="decimal" aria-label="Salario mensual"></div>
 <div class="remaining" id="remainingBox"><small>Te queda después de gastos</small><strong id="remaining">0,00 €</strong></div>
 </section>
 <section class="card">
@@ -161,6 +161,15 @@ let saveStatusTimer = null;
 
 const money = n => new Intl.NumberFormat('es-ES', { style:'currency', currency:'EUR' }).format(n || 0);
 function escapeHtml(s){ return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+// Acepta "12,50", "12.50", "1.200,50" o "1200 €"
+function toNum(v){
+if (typeof v === 'number') return isFinite(v) ? v : 0;
+v = String(v || '').replace(/[\s€]/g, '');
+if (v.includes(',')) v = v.replace(/\./g, '').replace(',', '.');
+const n = parseFloat(v);
+return isFinite(n) ? n : 0;
+}
+function toInput(n){ return n === '' || n === null || n === undefined ? '' : String(n).replace('.', ','); }
 function debounce(fn, ms){ let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }; }
 
 // ---- Auth UI ----
@@ -279,12 +288,12 @@ function setStatus(text, kind){
 
 // ---- Render ----
 function render(){
-  $('#salary').value = salary || '';
+  $('#salary').value = salary ? toInput(salary) : '';
   expensesEl.innerHTML = '';
   expenses.forEach((e, i) => {
     const row = document.createElement('div');
     row.className = 'row';
-    row.innerHTML = `<button type="button" class="emoji${e.emoji ? '' : ' empty'}" title="Cambiar emoji" aria-label="Cambiar emoji">${e.emoji ? escapeHtml(e.emoji) : '+'}${e.emoji ? '<span class="plus">+</span>' : ''}</button><input class="name" value="${escapeHtml(e.name)}" aria-label="Nombre del gasto"><input class="amount" type="number" min="0" step="0.01" value="${e.amount}" placeholder="0,00" inputmode="decimal" aria-label="Importe del gasto"><button class="remove" title="Eliminar gasto" aria-label="Eliminar gasto">×</button>`;
+    row.innerHTML = `<button type="button" class="emoji${e.emoji ? '' : ' empty'}" title="Cambiar emoji" aria-label="Cambiar emoji">${e.emoji ? escapeHtml(e.emoji) : '+'}${e.emoji ? '<span class="plus">+</span>' : ''}</button><input class="name" value="${escapeHtml(e.name)}" aria-label="Nombre del gasto"><input class="amount" type="text" value="${toInput(e.amount)}" placeholder="0,00" inputmode="decimal" aria-label="Importe del gasto"><button class="remove" title="Eliminar gasto" aria-label="Eliminar gasto">×</button>`;
     row.querySelector('.name').oninput = ev => { expenses[i].name = ev.target.value; saveExpenseDebounced(expenses[i]); };
     row.querySelector('.amount').oninput = ev => { expenses[i].amount = ev.target.value; calculate(); saveExpenseDebounced(expenses[i]); };
     row.querySelector('.remove').onclick = () => removeExpense(i);
@@ -295,8 +304,8 @@ row.querySelector('.emoji').onclick = ev => { ev.stopPropagation(); openEmojiPic
 }
 
 function calculate(){
-  const s = Number(salary) || 0;
-  const total = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const s = toNum(salary);
+  const total = expenses.reduce((sum, e) => sum + toNum(e.amount), 0);
   const left = s - total, pct = s ? total / s * 100 : 0;
   $('#total').textContent = money(total);
   $('#percentage').textContent = `${Math.round(pct)} %`;
@@ -309,14 +318,14 @@ function calculate(){
 const saveSalaryDebounced = debounce(async () => {
   if (!currentUser) return;
   setStatus('Guardando…', 'saving');
-  const { error } = await sb.from('budgets').update({ salary: Number(salary) || 0, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
+  const { error } = await sb.from('budgets').update({ salary: toNum(salary), updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
   setStatus(error ? 'Error al guardar' : '✓ Guardado en la nube', error ? 'error' : 'ok');
 }, 500);
 
 const saveExpenseDebounced = debounce(async (expense) => {
   if (!currentUser) return;
   setStatus('Guardando…', 'saving');
-  const { error } = await sb.from('expenses').update({ name: expense.name, amount: Number(expense.amount) || 0 }).eq('id', expense.id);
+  const { error } = await sb.from('expenses').update({ name: expense.name, amount: toNum(expense.amount) }).eq('id', expense.id);
   setStatus(error ? 'Error al guardar' : '✓ Guardado en la nube', error ? 'error' : 'ok');
 }, 500);
 
