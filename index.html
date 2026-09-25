@@ -40,7 +40,19 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .add { color:#fff; background:var(--blue); }
 .expenses { display:grid; gap:10px; }
 .row { display:grid; grid-template-columns:42px minmax(100px,1fr) minmax(112px,180px) 38px; gap:12px; align-items:center; padding:11px; border:1px solid var(--line); border-radius:14px; }
-.emoji { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:var(--soft); font-size:1.1rem; }
+.emoji { position:relative; display:grid; place-items:center; width:34px; height:34px; padding:0; border-radius:10px; background:var(--soft); border:1px dashed transparent; font-size:1.1rem; line-height:1; }
+.emoji:hover { background:#eaf0ff; border-color:#b9c9f5; }
+.emoji.empty { color:var(--blue); font-weight:800; font-size:1.25rem; border-color:#b9c9f5; background:#f1f5ff; }
+.emoji .plus { position:absolute; right:-5px; bottom:-5px; width:16px; height:16px; border-radius:50%; background:var(--blue); color:#fff; font-size:.72rem; font-weight:800; line-height:16px; text-align:center; box-shadow:0 0 0 2px #fff; }
+.emojiPicker { position:absolute; z-index:50; width:min(320px,calc(100vw - 32px)); background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px; box-shadow:0 18px 40px #2439652e; }
+.emojiPicker h3 { margin:0 0 10px; font-size:.9rem; color:var(--muted); }
+.emojiGrid { display:grid; grid-template-columns:repeat(8,1fr); gap:4px; }
+.emojiGrid button { padding:0; height:34px; background:transparent; font-size:1.2rem; border-radius:8px; }
+.emojiGrid button:hover, .emojiGrid button.selected { background:#eaf0ff; transform:none; }
+.emojiCustom { display:flex; gap:8px; margin-top:12px; }
+.emojiCustom input { flex:1; min-width:0; border:1px solid var(--line); background:#f8faff; border-radius:8px; padding:8px 10px; font:inherit; outline:none; }
+.emojiCustom button { background:var(--blue); color:#fff; padding:8px 12px; }
+.emojiClear { margin-top:8px; background:transparent; color:var(--muted); padding:4px 0; font-size:.84rem; text-decoration:underline; }
 .row input { min-width:0; width:100%; padding:9px 10px; border:1px solid transparent; background:#f8faff; border-radius:8px; color:var(--ink); font:inherit; font-weight:650; outline:none; }
 .row input:focus { background:white; border-color:var(--blue); }
 .row .amount { text-align:right; }
@@ -120,6 +132,13 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 <button class="reset" id="reset">Restablecer presupuesto</button>
 </section>
 </main>
+
+<div class="emojiPicker" id="emojiPicker" hidden role="dialog" aria-label="Elegir emoji">
+<h3>Elige un emoji</h3>
+<div class="emojiGrid" id="emojiGrid"></div>
+<div class="emojiCustom"><input id="emojiCustom" placeholder="O escribe/pega otro emoji" aria-label="Otro emoji"><button type="button" id="emojiCustomOk">Usar</button></div>
+<button type="button" class="emojiClear" id="emojiClear">Quitar emoji</button>
+</div>
 
 <script>
 // ---- Supabase setup ----
@@ -243,7 +262,7 @@ async function loadUserData(){
   }
 
   salary = budget.salary || 0;
-  expenses = (rows || []).map(r => ({ id: r.id, emoji: r.emoji || '💸', name: r.name || '', amount: r.amount || 0 }));
+  expenses = (rows || []).map(r => ({ id: r.id, emoji: r.emoji || '', name: r.name || '', amount: r.amount || 0 }));
   render();
   setStatus('✓ Guardado en la nube', 'ok');
 }
@@ -265,10 +284,11 @@ function render(){
   expenses.forEach((e, i) => {
     const row = document.createElement('div');
     row.className = 'row';
-    row.innerHTML = `<span class="emoji">${e.emoji || '💸'}</span><input class="name" value="${escapeHtml(e.name)}" aria-label="Nombre del gasto"><input class="amount" type="number" min="0" step="0.01" value="${e.amount}" placeholder="0,00" inputmode="decimal" aria-label="Importe del gasto"><button class="remove" title="Eliminar gasto" aria-label="Eliminar gasto">×</button>`;
+    row.innerHTML = `<button type="button" class="emoji${e.emoji ? '' : ' empty'}" title="Cambiar emoji" aria-label="Cambiar emoji">${e.emoji ? escapeHtml(e.emoji) : '+'}${e.emoji ? '<span class="plus">+</span>' : ''}</button><input class="name" value="${escapeHtml(e.name)}" aria-label="Nombre del gasto"><input class="amount" type="number" min="0" step="0.01" value="${e.amount}" placeholder="0,00" inputmode="decimal" aria-label="Importe del gasto"><button class="remove" title="Eliminar gasto" aria-label="Eliminar gasto">×</button>`;
     row.querySelector('.name').oninput = ev => { expenses[i].name = ev.target.value; saveExpenseDebounced(expenses[i]); };
     row.querySelector('.amount').oninput = ev => { expenses[i].amount = ev.target.value; calculate(); saveExpenseDebounced(expenses[i]); };
     row.querySelector('.remove').onclick = () => removeExpense(i);
+row.querySelector('.emoji').onclick = ev => { ev.stopPropagation(); openEmojiPicker(ev.currentTarget, i); };
     expensesEl.append(row);
   });
   calculate();
@@ -305,7 +325,7 @@ $('#salary').oninput = e => { salary = e.target.value; calculate(); saveSalaryDe
 $('#addExpense').onclick = async () => {
   if (!currentUser) return;
   setStatus('Guardando…', 'saving');
-  const { data, error } = await sb.from('expenses').insert({ user_id: currentUser.id, emoji: '💸', name: 'Nuevo gasto', amount: 0 }).select().single();
+  const { data, error } = await sb.from('expenses').insert({ user_id: currentUser.id, emoji: '', name: 'Nuevo gasto', amount: 0 }).select().single();
   if (error) { setStatus('Error al guardar', 'error'); return; }
   expenses.push({ id: data.id, emoji: data.emoji, name: data.name, amount: data.amount });
   render();
@@ -336,6 +356,49 @@ $('#reset').onclick = async () => {
   render();
   setStatus('✓ Guardado en la nube', 'ok');
 };
+
+// ---- Emoji picker ----
+const EMOJI_OPTIONS = ['🏠','🏡','🔑','🛋️','🛒','🍎','🍕','☕','🍽️','🍺','🚆','🚗','⛽','🚌','🚲','✈️','💡','💧','🔥','📱','🌐','📺','🎮','🎬','🎵','✨','🏋️','⚽','👕','💄','💇','💊','🏥','🦷','🐶','👶','🎓','📚','💼','💻','🎁','❤️','🎉','💳','🏦','💰','💸','🐷','📈','🧾','🛡️','🔧','🧹','🌱','🚬','❓'];
+const picker = $('#emojiPicker'), emojiGrid = $('#emojiGrid'), emojiCustom = $('#emojiCustom');
+let pickerIndex = null;
+EMOJI_OPTIONS.forEach(em => { const b = document.createElement('button'); b.type = 'button'; b.textContent = em; b.onclick = () => chooseEmoji(em); emojiGrid.append(b); });
+function openEmojiPicker(btn, i){
+if (pickerIndex === i && !picker.hidden) { closeEmojiPicker(); return; }
+pickerIndex = i;
+const current = expenses[i].emoji;
+emojiGrid.querySelectorAll('button').forEach(b => b.classList.toggle('selected', b.textContent === current));
+emojiCustom.value = '';
+picker.hidden = false;
+const r = btn.getBoundingClientRect();
+const vw = document.documentElement.clientWidth;
+const left = Math.max(16, Math.min(r.left, vw - picker.offsetWidth - 16));
+picker.style.left = (left + window.scrollX) + 'px';
+picker.style.top = (r.bottom + window.scrollY + 8) + 'px';
+}
+function closeEmojiPicker(){ picker.hidden = true; pickerIndex = null; }
+function firstEmoji(text){
+text = text.trim();
+if (!text) return '';
+if (window.Intl && Intl.Segmenter) { const first = new Intl.Segmenter(undefined, { granularity:'grapheme' }).segment(text)[Symbol.iterator]().next().value; return first ? first.segment : ''; }
+return Array.from(text)[0];
+}
+async function chooseEmoji(emoji){
+if (pickerIndex === null) return;
+const e = expenses[pickerIndex];
+closeEmojiPicker();
+e.emoji = emoji;
+render();
+if (!currentUser) return;
+setStatus('Guardando…', 'saving');
+const { error } = await sb.from('expenses').update({ emoji }).eq('id', e.id);
+setStatus(error ? 'Error al guardar' : '✓ Guardado en la nube', error ? 'error' : 'ok');
+}
+$('#emojiCustomOk').onclick = () => { const em = firstEmoji(emojiCustom.value); if (em) chooseEmoji(em); else emojiCustom.focus(); };
+emojiCustom.onkeydown = ev => { if (ev.key === 'Enter') { ev.preventDefault(); $('#emojiCustomOk').click(); } };
+$('#emojiClear').onclick = () => chooseEmoji('');
+document.addEventListener('click', ev => { if (!picker.hidden && !picker.contains(ev.target)) closeEmojiPicker(); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !picker.hidden) closeEmojiPicker(); });
+window.addEventListener('resize', closeEmojiPicker);
 
 // ---- Boot ----
 (async function init(){
