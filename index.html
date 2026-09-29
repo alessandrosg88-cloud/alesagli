@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mi presupuesto</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.min.js"></script>
 <style>
 :root { --ink:#19243a; --muted:#6d7890; --line:#e4e9f1; --blue:#3567ee; --green:#17a876; --soft:#f5f7fb; --danger:#cf4f5b; }
 * { box-sizing:border-box; }
@@ -136,6 +136,7 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
     </form>
     <p class="authMsg" id="authMsg"></p>
     <p class="authNote">Tus datos se guardan de forma segura y cifrada en Supabase. Cada persona solo puede ver y modificar su propio presupuesto (protegido por Row Level Security).</p>
+    <p class="authNote" style="margin-top:8px"><a href="privacidad.html" style="color:var(--blue)">Al crear una cuenta aceptas la política de privacidad</a></p>
   </section>
 </main>
 
@@ -491,9 +492,10 @@ window.addEventListener('resize', closeEmojiPicker);
   // so it takes care of showing the right screen and loading data.
 })();
 </script>
+<p style="text-align:center;font-size:.8rem;margin:24px 0 90px"><a href="privacidad.html" style="color:var(--muted)">Privacidad y cookies</a></p>
 <!-- Aviso de cookies -->
 <div id="cookie-banner" style="position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;max-width:640px;margin:0 auto;background:#1f2937;color:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:14px/1.4 system-ui,sans-serif;display:none;gap:12px;align-items:center;flex-wrap:wrap">
-  <span style="flex:1;min-width:200px">Este sitio usa cookies y almacenamiento local para mantener tu sesión y guardar tus datos. Al registrarte o iniciar sesión con tu email, aceptas su uso.</span>
+  <span style="flex:1;min-width:200px">Este sitio usa cookies y almacenamiento local para mantener tu sesión y guardar tus datos. Al registrarte o iniciar sesión con tu email, aceptas su uso. <a href="privacidad.html" style="color:#fff;text-decoration:underline">Más información</a></span>
   <button id="cookie-accept" type="button" style="background:#fff;color:#1f2937;border:0;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer">Aceptar</button>
 </div>
 <script>
