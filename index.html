@@ -417,5 +417,13 @@ window.addEventListener('resize', closeEmojiPicker);
   // so it takes care of showing the right screen and loading data.
 })();
 </script>
+<!-- Aviso de cookies -->
+<div id="cookie-banner" style="position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;max-width:640px;margin:0 auto;background:#1f2937;color:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:14px/1.4 system-ui,sans-serif;display:none;gap:12px;align-items:center;flex-wrap:wrap">
+  <span style="flex:1;min-width:200px">Este sitio usa cookies y almacenamiento local para mantener tu sesión y guardar tus datos. Al registrarte o iniciar sesión con tu email, aceptas su uso.</span>
+  <button id="cookie-accept" type="button" style="background:#fff;color:#1f2937;border:0;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer">Aceptar</button>
+</div>
+<script>
+(function(){var b=document.getElementById('cookie-banner');try{if(localStorage.getItem('cookiesAceptadas')==='1')return;}catch(e){}b.style.display='flex';document.getElementById('cookie-accept').onclick=function(){try{localStorage.setItem('cookiesAceptadas','1');}catch(e){}b.style.display='none';};})();
+</script>
 </body>
 </html>
