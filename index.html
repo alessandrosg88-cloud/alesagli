@@ -493,6 +493,256 @@ window.addEventListener('resize', closeEmojiPicker);
 })();
 </script>
 <p style="text-align:center;font-size:.8rem;margin:24px 0 90px"><a href="privacidad.html" style="color:var(--muted)">Privacidad y cookies</a> · <a href="terminos.html" style="color:var(--muted)">Términos de uso y aviso legal</a></p>
+<!-- Idioma y compartir: Español / Italiano / English -->
+<style>
+.lang-bar { width: min(1040px, calc(100% - 32px)); margin: 14px auto 0; display: flex; justify-content: flex-end; gap: 8px; position: relative; z-index: 20; }
+.lang-btn { background: #fff !important; color: var(--ink) !important; border: 1px solid var(--line) !important; border-radius: 999px !important; padding: 6px 12px !important; font-size: .8rem !important; font-weight: 600 !important; box-shadow: none !important; width: auto !important; cursor: pointer; }
+.share-wrap { position: relative; }
+.share-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 50; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 32px #2439651f; padding: 6px; min-width: 220px; display: flex; flex-direction: column; }
+.share-menu a, .share-menu button { display: flex !important; align-items: center; gap: 10px; text-align: left; padding: 8px 10px !important; border-radius: 8px !important; font-family: inherit; font-size: .88rem !important; font-weight: 500 !important; color: var(--ink) !important; text-decoration: none; background: none !important; border: 0 !important; box-shadow: none !important; width: 100% !important; cursor: pointer; }
+.share-menu a:hover, .share-menu button:hover { background: var(--soft) !important; }
+.share-note { font-size: .78rem; color: var(--green); padding: 6px 10px; max-width: 220px; line-height: 1.4; }
+</style>
+<script>
+(function(){
+  var LANGS = ["es", "it", "en"];
+  var NAMES = { es: "Español", it: "Italiano", en: "English" };
+  // español: [italiano, inglés]
+  var T = {
+    "💶 Tu dinero, bajo control": ["💶 I tuoi soldi, sotto controllo", "💶 Your money, under control"],
+    "Mi presupuesto": ["Il mio budget", "My Budget"],
+    "Organiza tu salario, apunta tus gastos y mira al instante cuánto te queda cada mes.": ["Organizza il tuo stipendio, annota le spese e guarda subito quanto ti resta ogni mese.", "Organise your salary, log your expenses and instantly see how much you have left each month."],
+    "Reparte tu sueldo entre tus gastos del mes": ["Ripartisci lo stipendio tra le spese del mese", "Split your pay across the month's expenses"],
+    "Guardado en la nube: entra desde cualquier dispositivo": ["Salvato nel cloud: accedi da qualsiasi dispositivo", "Saved in the cloud: sign in from any device"],
+    "Privado: solo tú puedes ver tus datos": ["Privato: solo tu puoi vedere i tuoi dati", "Private: only you can see your data"],
+    "Inicia sesión": ["Accedi", "Sign in"],
+    "Iniciar sesión": ["Accedi", "Sign in"],
+    "Crear cuenta": ["Crea account", "Create account"],
+    "Crea tu cuenta": ["Crea il tuo account", "Create your account"],
+    "Te pedimos tu correo solo para crear tu cuenta y guardar tus gastos de forma segura en la nube; no lo usamos para nada más. Solo tú puedes ver tus datos. Tu sesión se mantiene iniciada en este dispositivo hasta que pulses «Cerrar sesión»; solo te lo volveremos a pedir si la sesión caduca o cierras sesión.": ["Ti chiediamo l'email solo per creare il tuo account e salvare le tue spese in modo sicuro nel cloud; non la usiamo per nient'altro. Solo tu puoi vedere i tuoi dati. La sessione resta attiva su questo dispositivo finché non premi «Esci»; te la richiederemo solo se la sessione scade o se esci.", "We only ask for your email to create your account and keep your expenses safe in the cloud; we don't use it for anything else. Only you can see your data. You stay signed in on this device until you press «Sign out»; we'll only ask again if your session expires or you sign out."],
+    "Correo electrónico": ["Email", "Email"],
+    "Contraseña": ["Password", "Password"],
+    "¿Olvidaste tu contraseña?": ["Password dimenticata?", "Forgot your password?"],
+    "Nueva contraseña": ["Nuova password", "New password"],
+    "Guardar nueva contraseña": ["Salva nuova password", "Save new password"],
+    "Recuperar contraseña": ["Recupera password", "Reset password"],
+    "Elige una nueva contraseña": ["Scegli una nuova password", "Choose a new password"],
+    "← Volver a iniciar sesión": ["← Torna all'accesso", "← Back to sign in"],
+    "Enviar enlace de recuperación": ["Invia link di recupero", "Send reset link"],
+    "Guardando…": ["Salvataggio…", "Saving…"],
+    "Contraseña actualizada. Entrando…": ["Password aggiornata. Accesso in corso…", "Password updated. Signing in…"],
+    "Un momento…": ["Un momento…", "One moment…"],
+    "Si hay una cuenta con ese correo, te hemos enviado un enlace para cambiar la contraseña. Revisa tu bandeja de entrada y la carpeta de spam.": ["Se esiste un account con questa email, ti abbiamo inviato un link per cambiare la password. Controlla la posta in arrivo e la cartella spam.", "If there's an account with that email, we've sent you a link to change your password. Check your inbox and spam folder."],
+    "Cuenta creada. Revisa tu correo y confirma tu cuenta para poder iniciar sesión.": ["Account creato. Controlla la tua email e conferma l'account per poter accedere.", "Account created. Check your email and confirm your account to sign in."],
+    "Ha ocurrido un error. Inténtalo de nuevo.": ["Si è verificato un errore. Riprova.", "Something went wrong. Please try again."],
+    "Correo o contraseña incorrectos.": ["Email o password errati.", "Incorrect email or password."],
+    "Ya existe una cuenta con ese correo. Prueba a iniciar sesión.": ["Esiste già un account con questa email. Prova ad accedere.", "An account with that email already exists. Try signing in."],
+    "La contraseña debe tener al menos 6 caracteres.": ["La password deve avere almeno 6 caratteri.", "The password must be at least 6 characters."],
+    "Ese correo no parece válido.": ["Questa email non sembra valida.", "That email doesn't look valid."],
+    "La nueva contraseña debe ser distinta de la anterior.": ["La nuova password deve essere diversa dalla precedente.", "The new password must be different from the old one."],
+    "Demasiados intentos. Espera un momento y vuelve a intentarlo.": ["Troppi tentativi. Attendi un momento e riprova.", "Too many attempts. Wait a moment and try again."],
+    "Cargando…": ["Caricamento…", "Loading…"],
+    "Error al guardar": ["Errore di salvataggio", "Error saving"],
+    "✓ Guardado en la nube": ["✓ Salvato nel cloud", "✓ Saved in the cloud"],
+    "Tus datos se guardan de forma segura y cifrada en Supabase. Cada persona solo puede ver y modificar su propio presupuesto (protegido por Row Level Security).": ["I tuoi dati sono salvati in modo sicuro e cifrato su Supabase. Ogni persona può vedere e modificare solo il proprio budget (protetto da Row Level Security).", "Your data is stored securely and encrypted on Supabase. Each person can only see and edit their own budget (protected by Row Level Security)."],
+    "Al crear una cuenta aceptas los términos de uso y la política de privacidad.": ["Creando un account accetti i termini d'uso e l'informativa sulla privacy.", "By creating an account you accept the terms of use and the privacy policy."],
+    "Términos de uso": ["Termini d'uso", "Terms of use"],
+    "Privacidad y cookies": ["Privacy e cookie", "Privacy & cookies"],
+    "Términos de uso y aviso legal": ["Termini d'uso e note legali", "Terms of use & legal notice"],
+    "Organiza tu salario y decide a dónde va cada euro.": ["Organizza il tuo stipendio e decidi dove va ogni euro.", "Organise your salary and decide where every euro goes."],
+    "Cerrar sesión": ["Esci", "Sign out"],
+    "Salario mensual disponible": ["Stipendio mensile disponibile", "Available monthly salary"],
+    "Te queda después de gastos": ["Ti resta dopo le spese", "Left after expenses"],
+    "Tus gastos mensuales": ["Le tue spese mensili", "Your monthly expenses"],
+    "+ Añadir gasto": ["+ Aggiungi spesa", "+ Add expense"],
+    "Total de gastos": ["Totale spese", "Total expenses"],
+    "Porcentaje del salario": ["Percentuale dello stipendio", "Share of salary"],
+    "Escribe el nombre y el importe de todos tus gastos: comida, renta, transporte, ocio, deudas o cualquier otro.": ["Scrivi il nome e l'importo di tutte le tue spese: cibo, affitto, trasporti, svago, debiti o qualsiasi altra.", "Enter the name and amount of all your expenses: food, rent, transport, leisure, debts or anything else."],
+    "Restablecer presupuesto": ["Reimposta budget", "Reset budget"],
+    "¿Quieres borrar el presupuesto guardado y empezar de nuevo?": ["Vuoi cancellare il budget salvato e ricominciare da capo?", "Do you want to delete your saved budget and start over?"],
+    "Elige un emoji": ["Scegli un'emoji", "Choose an emoji"],
+    "Usar": ["Usa", "Use"],
+    "Quitar emoji": ["Rimuovi emoji", "Remove emoji"],
+    "Este sitio usa cookies y almacenamiento local para mantener tu sesión y guardar tus datos. Al registrarte o iniciar sesión con tu email, aceptas su uso.": ["Questo sito usa cookie e archiviazione locale per mantenere la sessione e salvare i tuoi dati. Registrandoti o accedendo con la tua email, ne accetti l'uso.", "This site uses cookies and local storage to keep you signed in and save your data. By signing up or signing in with your email, you accept their use."],
+    "Más información": ["Maggiori informazioni", "More info"],
+    "Aceptar": ["Accetta", "Accept"],
+    "tucorreo@ejemplo.com": ["tuaemail@esempio.com", "you@example.com"],
+    "Mínimo 6 caracteres": ["Minimo 6 caratteri", "At least 6 characters"],
+    "Ej. 1800,50": ["Es. 1800,50", "e.g. 1800.50"],
+    "Salario mensual": ["Stipendio mensile", "Monthly salary"],
+    "Cambiar emoji": ["Cambia emoji", "Change emoji"],
+    "Nombre del gasto": ["Nome della spesa", "Expense name"],
+    "Importe del gasto": ["Importo della spesa", "Expense amount"],
+    "Eliminar gasto": ["Elimina spesa", "Delete expense"],
+    "Porcentaje del salario destinado a gastos": ["Percentuale dello stipendio destinata alle spese", "Share of salary spent on expenses"],
+    "Elegir emoji": ["Scegli emoji", "Choose emoji"],
+    "O escribe/pega otro emoji": ["Oppure scrivi/incolla un'altra emoji", "Or type/paste another emoji"],
+    "Otro emoji": ["Altra emoji", "Other emoji"],
+    "Compartir": ["Condividi", "Share"],
+    "Más opciones…": ["Altre opzioni…", "More options…"],
+    "Mensaje de texto": ["Messaggio di testo", "Text message"],
+    "Correo": ["Email", "Email"],
+    "Copiar enlace": ["Copia link", "Copy link"],
+    "Enlace copiado.": ["Link copiato.", "Link copied."],
+    "Enlace copiado. Pégalo en Instagram (en un mensaje o en tu historia).": ["Link copiato. Incollalo su Instagram (in un messaggio o nella tua storia).", "Link copied. Paste it on Instagram (in a message or your story)."]
+  };
+  var lang = "es";
+  try { lang = localStorage.getItem("libroLang") || "es"; } catch (e) {}
+  if (LANGS.indexOf(lang) < 0) lang = "es";
+  function tr(s){
+    if (lang === "es" || !s) return s;
+    var m = s.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    if (!m[2]) return s;
+    var hit = T[m[2]];
+    return hit ? m[1] + hit[lang === "it" ? 0 : 1] + m[3] : s;
+  }
+
+  // ---- barra con los botones ----
+  var bar = document.createElement("div");
+  bar.className = "lang-bar";
+  var langBtn = document.createElement("button");
+  langBtn.type = "button";
+  langBtn.id = "langBtn";
+  langBtn.className = "lang-btn";
+  var shareWrap = document.createElement("div");
+  shareWrap.className = "share-wrap";
+  shareWrap.innerHTML =
+    '<button type="button" class="lang-btn" id="shareBtn" aria-haspopup="true"><span aria-hidden="true">📤</span> <span>Compartir</span></button>' +
+    '<div class="share-menu" id="shareMenu" hidden>' +
+      '<button type="button" data-net="native" hidden><span aria-hidden="true">📲</span><span>Más opciones…</span></button>' +
+      '<a data-net="whatsapp" target="_blank" rel="noopener"><span aria-hidden="true">💬</span><span>WhatsApp</span></a>' +
+      '<button type="button" data-net="instagram"><span aria-hidden="true">📸</span><span>Instagram</span></button>' +
+      '<a data-net="sms"><span aria-hidden="true">📱</span><span>Mensaje de texto</span></a>' +
+      '<a data-net="telegram" target="_blank" rel="noopener"><span aria-hidden="true">✈️</span><span>Telegram</span></a>' +
+      '<a data-net="facebook" target="_blank" rel="noopener"><span aria-hidden="true">📘</span><span>Facebook</span></a>' +
+      '<a data-net="x" target="_blank" rel="noopener"><span aria-hidden="true">𝕏</span><span>X (Twitter)</span></a>' +
+      '<a data-net="email"><span aria-hidden="true">✉️</span><span>Correo</span></a>' +
+      '<button type="button" data-net="copy"><span aria-hidden="true">🔗</span><span>Copiar enlace</span></button>' +
+      '<div class="share-note" id="shareNote" hidden></div>' +
+    '</div>';
+  bar.appendChild(shareWrap);
+  bar.appendChild(langBtn);
+  document.body.insertBefore(bar, document.body.firstChild);
+
+  // ---- traducción ----
+  var ATTRS = ["placeholder", "title", "aria-label"];
+  function apply(){
+    var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    var n;
+    while ((n = w.nextNode())){
+      var p = n.parentNode;
+      if (!p || p === langBtn || p.nodeName === "SCRIPT" || p.nodeName === "STYLE") continue;
+      if (n.__tr !== n.nodeValue) n.__es = n.nodeValue;
+      var t = tr(n.__es);
+      if (t !== n.nodeValue) n.nodeValue = t;
+      n.__tr = t;
+    }
+    document.querySelectorAll("[placeholder],[title],[aria-label]").forEach(function(el){
+      if (el === langBtn) return;
+      el.__esA = el.__esA || {}; el.__trA = el.__trA || {};
+      ATTRS.forEach(function(a){
+        var v = el.getAttribute(a);
+        if (v == null) return;
+        if (el.__trA[a] !== v) el.__esA[a] = v;
+        var t = tr(el.__esA[a]);
+        if (t !== v) el.setAttribute(a, t);
+        el.__trA[a] = t;
+      });
+    });
+    document.title = tr("Mi presupuesto");
+    document.documentElement.lang = lang;
+  }
+  var OPTS = { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS };
+  var pending = false;
+  var obs = new MutationObserver(function(){
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function(){ pending = false; obs.disconnect(); apply(); obs.observe(document.body, OPTS); });
+  });
+  function label(){
+    langBtn.textContent = "🌐 " + NAMES[lang];
+    langBtn.title = { es: "Cambiar idioma", it: "Cambia lingua", en: "Change language" }[lang];
+  }
+  langBtn.addEventListener("click", function(){
+    lang = LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length];
+    try { localStorage.setItem("libroLang", lang); } catch (e) {}
+    label();
+    obs.disconnect(); apply(); obs.observe(document.body, OPTS);
+  });
+  var _alert = window.alert, _confirm = window.confirm;
+  window.alert = function(m){ return _alert.call(window, tr(String(m))); };
+  window.confirm = function(m){ return _confirm.call(window, tr(String(m))); };
+
+  // ---- compartir ----
+  var MSG = {
+    es: { title: "Mi presupuesto", text: "Te recomiendo Mi presupuesto para organizar tu salario y tus gastos cada mes:" },
+    it: { title: "Il mio budget", text: "Ti consiglio Il mio budget per organizzare stipendio e spese ogni mese:" },
+    en: { title: "My Budget", text: "Check out My Budget to organise your salary and expenses each month:" }
+  };
+  var shareBtn = document.getElementById("shareBtn");
+  var menu = document.getElementById("shareMenu");
+  var note = document.getElementById("shareNote");
+  function datos(){ var m = MSG[lang] || MSG.es; return { title: m.title, text: m.text, url: location.origin + location.pathname }; }
+  function enc(s){ return encodeURIComponent(s); }
+  function prepararEnlaces(){
+    var d = datos();
+    var hrefs = {
+      whatsapp: "https://wa.me/?text=" + enc(d.text + " " + d.url),
+      sms: "sms:?&body=" + enc(d.text + " " + d.url),
+      telegram: "https://t.me/share/url?url=" + enc(d.url) + "&text=" + enc(d.text),
+      facebook: "https://www.facebook.com/sharer/sharer.php?u=" + enc(d.url),
+      x: "https://twitter.com/intent/tweet?text=" + enc(d.text) + "&url=" + enc(d.url),
+      email: "mailto:?subject=" + enc(d.title) + "&body=" + enc(d.text + "\n" + d.url)
+    };
+    menu.querySelectorAll("a[data-net]").forEach(function(a){ a.href = hrefs[a.getAttribute("data-net")]; });
+    menu.querySelector('[data-net="native"]').hidden = !navigator.share;
+  }
+  function aviso(t){ note.textContent = t; note.hidden = false; }
+  function copiar(texto, alTerminar){
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = texto; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta);
+      alTerminar();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto).then(alTerminar, fallback);
+    else fallback();
+  }
+  function cerrar(){ menu.hidden = true; note.hidden = true; }
+  shareBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    if (menu.hidden){ prepararEnlaces(); note.hidden = true; menu.hidden = false; } else cerrar();
+  });
+  menu.addEventListener("click", function(e){
+    e.stopPropagation();
+    var item = e.target.closest("[data-net]");
+    if (!item) return;
+    var net = item.getAttribute("data-net");
+    var d = datos();
+    if (net === "native"){
+      navigator.share({ title: d.title, text: d.text, url: d.url }).catch(function(){});
+    } else if (net === "copy"){
+      copiar(d.url, function(){ aviso("Enlace copiado."); });
+    } else if (net === "instagram"){
+      if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
+        navigator.share({ title: d.title, text: d.text, url: d.url }).catch(function(){});
+      } else {
+        copiar(d.text + " " + d.url, function(){ aviso("Enlace copiado. Pégalo en Instagram (en un mensaje o en tu historia)."); });
+      }
+    } else {
+      setTimeout(cerrar, 300);
+    }
+  });
+  document.addEventListener("click", function(){ if (!menu.hidden) cerrar(); });
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape") cerrar(); });
+
+  label();
+  apply();
+  obs.observe(document.body, OPTS);
+})();
+</script>
 <!-- Aviso de cookies -->
 <div id="cookie-banner" style="position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;max-width:640px;margin:0 auto;background:#1f2937;color:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:14px/1.4 system-ui,sans-serif;display:none;gap:12px;align-items:center;flex-wrap:wrap">
   <span style="flex:1;min-width:200px">Este sitio usa cookies y almacenamiento local para mantener tu sesión y guardar tus datos. Al registrarte o iniciar sesión con tu email, aceptas su uso. <a href="privacidad.html" style="color:#fff;text-decoration:underline">Más información</a></span>
