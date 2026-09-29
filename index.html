@@ -84,15 +84,37 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .spinner { display:inline-block; width:16px; height:16px; border:2px solid #cdd8ee; border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; vertical-align:-3px; margin-right:6px; }
 @keyframes spin { to { transform:rotate(360deg); } }
 @media (max-width:620px) { .wrap { padding-top:28px; } header,.income { display:block; } .save { display:inline-block; margin-top:15px; } .remaining { border:0; border-top:1px solid #ffffff2e; padding:20px 0 0; margin-top:20px; } .card { padding:20px; } .row { grid-template-columns:37px 1fr 34px; gap:8px; } .row .amount { grid-column:2; grid-row:2; text-align:left; } .summary { grid-template-columns:1fr; } }
+
+/* Portada de inicio de sesión */
+.authWrap { width:min(1040px,calc(100% - 32px)); min-height:100vh; margin:0 auto; padding:48px 0; display:grid; grid-template-columns:1.1fr 1fr; gap:48px; align-items:center; }
+.authBadge { display:inline-block; background:#e8efff; color:var(--blue); font-weight:700; font-size:.85rem; padding:6px 12px; border-radius:999px; }
+.authTitle { font-size:clamp(2.6rem,6vw,4rem); letter-spacing:-.05em; line-height:1; margin:18px 0 14px; }
+.authLead { font-size:1.15rem; color:var(--muted); margin:0 0 24px; max-width:32ch; }
+.authPoints { list-style:none; padding:0; margin:0; display:grid; gap:12px; font-weight:600; }
+.authPoints li::before { content:"✓"; color:var(--green); font-weight:800; margin-right:10px; }
+.authCardTitle { margin:0 0 8px; font-size:1.5rem; letter-spacing:-.02em; }
+.linkBtn { display:block; width:auto; background:none !important; box-shadow:none !important; border:0; color:var(--blue) !important; padding:8px 0 0; margin:6px auto 0; font-size:.88rem; font-weight:600; cursor:pointer; }
+.linkBtn:hover { text-decoration:underline; }
+@media (max-width:760px){ .authWrap { grid-template-columns:1fr; gap:28px; padding:32px 0; min-height:auto; } }
 </style>
 </head>
 <body>
 
 <main class="authWrap" id="authWrap" hidden>
+  <section class="authHero">
+    <span class="authBadge">💶 Tu dinero, bajo control</span>
+    <h1 class="authTitle">Mi presupuesto</h1>
+    <p class="authLead">Organiza tu salario, apunta tus gastos y mira al instante cuánto te queda cada mes.</p>
+    <ul class="authPoints">
+      <li>Reparte tu sueldo entre tus gastos del mes</li>
+      <li>Guardado en la nube: entra desde cualquier dispositivo</li>
+      <li>Privado: solo tú puedes ver tus datos</li>
+    </ul>
+  </section>
   <section class="authCard">
-    <h1 style="font-size:2rem">Mi presupuesto</h1>
+    <h2 class="authCardTitle" id="authHeading">Inicia sesión</h2>
     <p class="sub">Te pedimos tu correo solo para crear tu cuenta y guardar tus gastos de forma segura en la nube; no lo usamos para nada más. Solo tú puedes ver tus datos. Tu sesión se mantiene iniciada en este dispositivo hasta que pulses «Cerrar sesión»; solo te lo volveremos a pedir si la sesión caduca o cierras sesión.</p>
-    <div class="authTabs">
+    <div class="authTabs" id="authTabs">
       <button type="button" class="authTab active" id="tabLogin">Iniciar sesión</button>
       <button type="button" class="authTab" id="tabSignup">Crear cuenta</button>
     </div>
@@ -100,10 +122,17 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
       <label>Correo electrónico
         <input type="email" id="authEmail" required autocomplete="email" placeholder="tucorreo@ejemplo.com">
       </label>
-      <label>Contraseña
+      <label id="passwordLabel">Contraseña
         <input type="password" id="authPassword" required autocomplete="current-password" minlength="6" placeholder="Mínimo 6 caracteres">
       </label>
       <button type="submit" class="add" id="authSubmit">Iniciar sesión</button>
+      <button type="button" class="linkBtn" id="forgotBtn">¿Olvidaste tu contraseña?</button>
+    </form>
+    <form id="newPassForm" hidden>
+      <label>Nueva contraseña
+        <input type="password" id="newPassword" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+      </label>
+      <button class="add" id="newPassSubmit">Guardar nueva contraseña</button>
     </form>
     <p class="authMsg" id="authMsg"></p>
     <p class="authNote">Tus datos se guardan de forma segura y cifrada en Supabase. Cada persona solo puede ver y modificar su propio presupuesto (protegido por Row Level Security).</p>
@@ -175,15 +204,47 @@ function debounce(fn, ms){ let t; return (...args) => { clearTimeout(t); t = set
 // ---- Auth UI ----
 function setAuthMode(next){
   mode = next;
+  const titles = { login:'Inicia sesión', signup:'Crea tu cuenta', recover:'Recuperar contraseña', newpass:'Elige una nueva contraseña' };
+  $('#authHeading').textContent = titles[mode];
   tabLogin.classList.toggle('active', mode === 'login');
   tabSignup.classList.toggle('active', mode === 'signup');
-  authSubmit.textContent = mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta';
+  $('#authTabs').hidden = (mode === 'recover' || mode === 'newpass');
+  authForm.hidden = (mode === 'newpass');
+  $('#newPassForm').hidden = (mode !== 'newpass');
+  $('#passwordLabel').hidden = (mode === 'recover');
+  authPassword.required = (mode === 'login' || mode === 'signup');
+  $('#forgotBtn').hidden = (mode === 'signup');
+  $('#forgotBtn').textContent = mode === 'recover' ? '← Volver a iniciar sesión' : '¿Olvidaste tu contraseña?';
+  authSubmit.textContent = mode === 'login' ? 'Iniciar sesión' : mode === 'signup' ? 'Crear cuenta' : 'Enviar enlace de recuperación';
   authPassword.autocomplete = mode === 'login' ? 'current-password' : 'new-password';
   authMsg.textContent = '';
   authMsg.className = 'authMsg';
 }
 tabLogin.onclick = () => setAuthMode('login');
 tabSignup.onclick = () => setAuthMode('signup');
+
+// ---- Recuperar contraseña ----
+let recovering = /type=recovery/.test(location.hash);
+$('#forgotBtn').onclick = () => setAuthMode(mode === 'recover' ? 'login' : 'recover');
+$('#newPassForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const btn = $('#newPassSubmit');
+  btn.disabled = true;
+  authMsg.className = 'authMsg';
+  authMsg.textContent = 'Guardando…';
+  try {
+    const { error } = await sb.auth.updateUser({ password: $('#newPassword').value });
+    if (error) throw error;
+    authMsg.textContent = 'Contraseña actualizada. Entrando…';
+    authMsg.className = 'authMsg ok';
+    recovering = false;
+    setTimeout(() => location.replace(location.pathname), 800);
+  } catch (err) {
+    authMsg.textContent = translateAuthError(err.message);
+    authMsg.className = 'authMsg error';
+    btn.disabled = false;
+  }
+};
 
 authForm.onsubmit = async (e) => {
   e.preventDefault();
@@ -193,7 +254,12 @@ authForm.onsubmit = async (e) => {
   authMsg.className = 'authMsg';
   authMsg.innerHTML = '<span class="spinner"></span>Un momento…';
   try {
-    if (mode === 'login') {
+    if (mode === 'recover') {
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+      if (error) throw error;
+      authMsg.textContent = 'Si hay una cuenta con ese correo, te hemos enviado un enlace para cambiar la contraseña. Revisa tu bandeja de entrada y la carpeta de spam.';
+      authMsg.className = 'authMsg ok';
+    } else if (mode === 'login') {
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) throw error;
       // onAuthStateChange handles the rest
@@ -219,6 +285,7 @@ function translateAuthError(msg){
   if (/already registered|already exists/i.test(msg)) return 'Ya existe una cuenta con ese correo. Prueba a iniciar sesión.';
   if (/password.*(least|characters)/i.test(msg)) return 'La contraseña debe tener al menos 6 caracteres.';
   if (/email.*invalid/i.test(msg)) return 'Ese correo no parece válido.';
+  if (/different from the old/i.test(msg)) return 'La nueva contraseña debe ser distinta de la anterior.';
   if (/rate limit/i.test(msg)) return 'Demasiados intentos. Espera un momento y vuelve a intentarlo.';
   return msg;
 }
@@ -231,6 +298,13 @@ $('#logout').onclick = async () => { await sb.auth.signOut(); };
 // never insert duplicate starter rows.
 let loadedForUserId = null;
 sb.auth.onAuthStateChange((_event, session) => {
+  if (_event === 'PASSWORD_RECOVERY') recovering = true;
+  if (recovering && session) {
+    appWrap.hidden = true;
+    authWrap.hidden = false;
+    setAuthMode('newpass');
+    return;
+  }
   currentUser = session ? session.user : null;
   if (currentUser) {
     authWrap.hidden = true;
