@@ -66,6 +66,13 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .bar i { display:block; height:100%; width:0%; border-radius:99px; background:linear-gradient(90deg,var(--blue),#6f8dff); transition:width .3s; }
 .hint { color:var(--muted); font-size:.88rem; margin:19px 0 0; }
 .reset { margin-top:14px; color:var(--muted); background:transparent; padding:7px 0; font-size:.86rem; text-decoration:underline; }
+/* plegar secciones */
+.toggle { width:30px; height:30px; padding:0; margin-right:8px; border-radius:8px; background:var(--soft); color:var(--muted); font-size:1rem; line-height:30px; vertical-align:middle; transition:transform .2s, background .15s; }
+.toggle:hover { background:#eaf0ff; color:var(--blue); transform:none; }
+.card.collapsed .toggle { transform:rotate(-90deg); }
+.card.collapsed > :not(.card-top) { display:none !important; }
+.card.collapsed .card-top { margin-bottom:0; }
+.card.collapsed .card-top .add { display:none; }
 /* ahorro */
 .savingsGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
 .field label { display:block; font-weight:700; font-size:.88rem; color:var(--muted); margin-bottom:6px; }
@@ -158,7 +165,7 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 
 <main class="wrap" id="appWrap" hidden>
 <header>
-<div><h1>Mi presupuesto</h1><p class="sub">Organiza tu salario y decide a dónde va cada euro.</p></div>
+<div><h1>Mi presupuesto</h1><p class="sub">Organiza tus ingresos y decide a dónde va cada euro.</p></div>
 <div class="userbar">
   <span class="save" id="saveStatus">✓ Guardado en la nube</span>
   <span class="email" id="userEmail"></span>
@@ -166,19 +173,19 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 </div>
 </header>
 <section class="income">
-<div><label for="salary">Salario mensual disponible</label><input id="salary" type="text" placeholder="Ej. 1800,50" inputmode="decimal" aria-label="Salario mensual"></div>
+<div><label for="salary">Ingresos</label><input id="salary" type="text" placeholder="Ej. 1800,50" inputmode="decimal" aria-label="Ingresos"></div>
 <div class="remaining" id="remainingBox"><small>Te queda después de gastos</small><strong id="remaining">0,00 €</strong></div>
 </section>
 <section class="card">
-<div class="card-top"><h2>Tus gastos mensuales</h2><button class="add" id="addExpense">+ Añadir gasto</button></div>
+<div class="card-top"><h2><button type="button" class="toggle" data-key="gastos" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>Tus gastos mensuales</h2><button class="add" id="addExpense">+ Añadir gasto</button></div>
 <div class="expenses" id="expenses"></div>
-<div class="summary"><div class="metric"><span>Total de gastos</span><strong id="total">0,00 €</strong></div><div class="metric"><span>Porcentaje del salario</span><strong id="percentage">0 %</strong></div></div>
-<div class="bar" aria-label="Porcentaje del salario destinado a gastos"><i id="bar"></i></div>
+<div class="summary"><div class="metric"><span>Total de gastos</span><strong id="total">0,00 €</strong></div><div class="metric"><span>Porcentaje de los ingresos</span><strong id="percentage">0 %</strong></div></div>
+<div class="bar" aria-label="Porcentaje de los ingresos destinado a gastos"><i id="bar"></i></div>
 <p class="hint">Escribe el nombre y el importe de todos tus gastos: comida, renta, transporte, ocio, deudas o cualquier otro.</p>
 <button class="reset" id="reset">Restablecer presupuesto</button>
 </section>
 <section class="card" id="savingsCard">
-<div class="card-top"><h2>🐷 Tu ahorro</h2></div>
+<div class="card-top"><h2><button type="button" class="toggle" data-key="ahorro" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>🐷 Tu ahorro</h2></div>
 <div class="savingsGrid">
   <div class="field"><label for="savedNow">Cuánto tienes ahorrado</label><input id="savedNow" type="text" inputmode="decimal" placeholder="Ej. 2500"></div>
   <div class="field"><label for="savingsGoal">Cuánto quieres ahorrar (objetivo)</label><input id="savingsGoal" type="text" inputmode="decimal" placeholder="Ej. 10000"></div>
@@ -566,6 +573,16 @@ document.addEventListener('click', ev => { if (!picker.hidden && !picker.contain
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !picker.hidden) closeEmojiPicker(); });
 window.addEventListener('resize', closeEmojiPicker);
 
+// ---- Plegar / desplegar secciones ----
+document.querySelectorAll('.toggle').forEach(btn => {
+  const card = btn.closest('.card'), key = 'plegado-' + btn.dataset.key;
+  try { if (localStorage.getItem(key) === '1') card.classList.add('collapsed'); } catch (e) {}
+  btn.onclick = () => {
+    const c = card.classList.toggle('collapsed');
+    try { localStorage.setItem(key, c ? '1' : '0'); } catch (e) {}
+  };
+});
+
 // ---- Boot ----
 (async function init(){
   const { data: { session } } = await sb.auth.getSession();
@@ -631,9 +648,12 @@ window.addEventListener('resize', closeEmojiPicker);
     "Términos de uso": ["Termini d'uso", "Terms of use"],
     "Privacidad y cookies": ["Privacy e cookie", "Privacy & cookies"],
     "Términos de uso y aviso legal": ["Termini d'uso e note legali", "Terms of use & legal notice"],
-    "Organiza tu salario y decide a dónde va cada euro.": ["Organizza il tuo stipendio e decidi dove va ogni euro.", "Organise your salary and decide where every euro goes."],
+    "Organiza tus ingresos y decide a dónde va cada euro.": ["Organizza le tue entrate e decidi dove va ogni euro.", "Organise your income and decide where every euro goes."],
     "Cerrar sesión": ["Esci", "Sign out"],
-    "Salario mensual disponible": ["Stipendio mensile disponibile", "Available monthly salary"],
+    "Ingresos": ["Entrate", "Income"],
+    "Porcentaje de los ingresos": ["Percentuale delle entrate", "Share of income"],
+    "Porcentaje de los ingresos destinado a gastos": ["Percentuale delle entrate destinata alle spese", "Share of income spent on expenses"],
+    "Ocultar / mostrar": ["Nascondi / mostra", "Hide / show"],
     "Te queda después de gastos": ["Ti resta dopo le spese", "Left after expenses"],
     "Tus gastos mensuales": ["Le tue spese mensili", "Your monthly expenses"],
     "+ Añadir gasto": ["+ Aggiungi spesa", "+ Add expense"],
