@@ -39,7 +39,7 @@ button:hover { transform:translateY(-1px); }
 button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .add { color:#fff; background:var(--blue); }
 .expenses { display:grid; gap:10px; }
-.row { display:grid; grid-template-columns:42px minmax(100px,1fr) minmax(112px,180px) 38px; gap:12px; align-items:center; padding:11px; border:1px solid var(--line); border-radius:14px; }
+.row { display:grid; grid-template-columns:42px minmax(100px,1fr) minmax(112px,180px) 34px 38px; gap:12px; align-items:center; padding:11px; border:1px solid var(--line); border-radius:14px; }
 .emoji { position:relative; display:grid; place-items:center; width:34px; height:34px; padding:0; border-radius:10px; background:var(--soft); border:1px dashed transparent; font-size:1.1rem; line-height:1; }
 .emoji:hover { background:#eaf0ff; border-color:#b9c9f5; }
 .emoji.empty { color:var(--blue); font-weight:800; font-size:1.25rem; border-color:#b9c9f5; background:#f1f5ff; }
@@ -66,6 +66,15 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .bar i { display:block; height:100%; width:0%; border-radius:99px; background:linear-gradient(90deg,var(--blue),#6f8dff); transition:width .3s; }
 .hint { color:var(--muted); font-size:.88rem; margin:19px 0 0; }
 .reset { margin-top:14px; color:var(--muted); background:transparent; padding:7px 0; font-size:.86rem; text-decoration:underline; }
+/* gastos fijos / variables */
+.group { margin-bottom:22px; }
+.groupTop { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin:0 0 10px; }
+.groupTop h3 { margin:0; font-size:1rem; }
+.groupTop .groupTotal { font-weight:800; color:var(--muted); }
+.groupHint { margin:-4px 0 10px; color:var(--muted); font-size:.84rem; }
+.addSmall { margin-top:10px; color:var(--blue); background:#eef3ff; padding:8px 12px; font-size:.88rem; }
+.move { width:30px; height:30px; padding:0; color:#8a94a8; background:transparent; font-size:1rem; }
+.move:hover { color:var(--blue); background:#eef3ff; }
 /* plegar secciones */
 .toggle { width:30px; height:30px; padding:0; margin-right:8px; border-radius:8px; background:var(--soft); color:var(--muted); font-size:1rem; line-height:30px; vertical-align:middle; transition:transform .2s, background .15s; }
 .toggle:hover { background:#eaf0ff; color:var(--blue); transform:none; }
@@ -107,7 +116,7 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .authNote { color:var(--muted); font-size:.82rem; margin-top:18px; line-height:1.5; }
 .spinner { display:inline-block; width:16px; height:16px; border:2px solid #cdd8ee; border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; vertical-align:-3px; margin-right:6px; }
 @keyframes spin { to { transform:rotate(360deg); } }
-@media (max-width:620px) { .wrap { padding-top:28px; } header,.income { display:block; } .save { display:inline-block; margin-top:15px; } .remaining { border:0; border-top:1px solid #ffffff2e; padding:20px 0 0; margin-top:20px; } .card { padding:20px; } .row { grid-template-columns:37px 1fr 34px; gap:8px; } .row .amount { grid-column:2; grid-row:2; text-align:left; } .summary { grid-template-columns:1fr; } }
+@media (max-width:620px) { .wrap { padding-top:28px; } header,.income { display:block; } .save { display:inline-block; margin-top:15px; } .remaining { border:0; border-top:1px solid #ffffff2e; padding:20px 0 0; margin-top:20px; } .card { padding:20px; } .row { grid-template-columns:37px 1fr 30px 34px; gap:8px; } .row .amount { grid-column:2; grid-row:2; text-align:left; } .summary { grid-template-columns:1fr; } }
 
 /* Portada de inicio de sesión */
 .authWrap { width:min(1040px,calc(100% - 32px)); min-height:100vh; margin:0 auto; padding:48px 0; display:grid; grid-template-columns:1.1fr 1fr; gap:48px; align-items:center; }
@@ -178,8 +187,19 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 <div class="remaining" id="remainingBox"><small>Te queda después de gastos</small><strong id="remaining">0,00 €</strong></div>
 </section>
 <section class="card">
-<div class="card-top"><h2><button type="button" class="toggle" data-key="gastos" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>Tus gastos mensuales</h2><button class="add" id="addExpense">+ Añadir gasto</button></div>
-<div class="expenses" id="expenses"></div>
+<div class="card-top"><h2><button type="button" class="toggle" data-key="gastos" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>Tus gastos mensuales</h2></div>
+<div class="group">
+  <div class="groupTop"><h3>📌 Gastos fijos</h3><span class="groupTotal" id="totalFixed">0,00 €</span></div>
+  <p class="groupHint">Los que pagas igual cada mes: renta, facturas, seguros, suscripciones…</p>
+  <div class="expenses" id="expensesFixed"></div>
+  <button type="button" class="addSmall" data-type="f">+ Añadir gasto fijo</button>
+</div>
+<div class="group">
+  <div class="groupTop"><h3>🔄 Gastos variables</h3><span class="groupTotal" id="totalVariable">0,00 €</span></div>
+  <p class="groupHint">Los que cambian de un mes a otro: comida, ocio, ropa, caprichos…</p>
+  <div class="expenses" id="expensesVariable"></div>
+  <button type="button" class="addSmall" data-type="v">+ Añadir gasto variable</button>
+</div>
 <div class="summary"><div class="metric"><span>Total de gastos</span><strong id="total">0,00 €</strong></div><div class="metric"><span>Porcentaje de los ingresos</span><strong id="percentage">0 %</strong></div></div>
 <div class="bar" aria-label="Porcentaje de los ingresos destinado a gastos"><i id="bar"></i></div>
 <p class="hint">Escribe el nombre y el importe de todos tus gastos: comida, renta, transporte, ocio, deudas o cualquier otro.</p>
@@ -228,7 +248,10 @@ const authWrap = $('#authWrap'), appWrap = $('#appWrap');
 const authForm = $('#authForm'), authEmail = $('#authEmail'), authPassword = $('#authPassword');
 const authSubmit = $('#authSubmit'), authMsg = $('#authMsg');
 const tabLogin = $('#tabLogin'), tabSignup = $('#tabSignup');
-const expensesEl = $('#expenses');
+const fixedEl = $('#expensesFixed'), variableEl = $('#expensesVariable');
+let expenseTypes = {}; // { [id]: 'f' | 'v' } se guarda en los datos de tu cuenta
+const typeOf = e => expenseTypes[e.id] === 'v' ? 'v' : 'f';
+function saveTypes(){ return currentUser ? sb.auth.updateUser({ data: { expense_types: expenseTypes } }) : Promise.resolve({}); }
 
 let mode = 'login'; // 'login' | 'signup'
 let currentUser = null;
@@ -372,11 +395,13 @@ sb.auth.onAuthStateChange((_event, session) => {
 });
 
 // ---- Data loading ----
-const defaults = [['🏠','Renta / hipoteca','700'],['🛒','Comida','300'],['🚆','Transporte','80'],['💡','Facturas','120'],['✨','Ocio','100']];
+const defaults = [['🏠','Renta / hipoteca','700','f'],['💡','Facturas','120','f'],['🚆','Transporte','80','f'],['🛒','Comida','300','v'],['✨','Ocio','100','v']];
+function typesForDefaults(rows){ const t = {}; (rows || []).forEach((r, i) => { if (defaults[i] && defaults[i][3] === 'v') t[r.id] = 'v'; }); return t; }
 
 async function loadUserData(){
   setStatus('Cargando…', 'saving');
   const uid = currentUser.id;
+  expenseTypes = Object.assign({}, (currentUser.user_metadata || {}).expense_types);
 
   let { data: budget } = await sb.from('budgets').select('*').eq('user_id', uid).maybeSingle();
   let { data: rows } = await sb.from('expenses').select('*').eq('user_id', uid).order('created_at', { ascending: true });
@@ -388,6 +413,8 @@ async function loadUserData(){
     const { data: inserted } = await sb.from('expenses').insert(toInsert).select();
     budget = { salary: 0 };
     rows = inserted || [];
+    expenseTypes = typesForDefaults(rows);
+    saveTypes();
   } else if (!budget) {
     await sb.from('budgets').insert({ user_id: uid, salary: 0 });
     budget = { salary: 0 };
@@ -412,16 +439,19 @@ function setStatus(text, kind){
 // ---- Render ----
 function render(){
   $('#salary').value = salary ? toInput(salary) : '';
-  expensesEl.innerHTML = '';
+  fixedEl.innerHTML = '';
+  variableEl.innerHTML = '';
   expenses.forEach((e, i) => {
+    const t = typeOf(e);
     const row = document.createElement('div');
     row.className = 'row';
-    row.innerHTML = `<button type="button" class="emoji${e.emoji ? '' : ' empty'}" title="Cambiar emoji" aria-label="Cambiar emoji">${e.emoji ? escapeHtml(e.emoji) : '+'}${e.emoji ? '<span class="plus">+</span>' : ''}</button><input class="name" value="${escapeHtml(e.name)}" aria-label="Nombre del gasto"><input class="amount" type="text" value="${toInput(e.amount)}" placeholder="0,00" inputmode="decimal" aria-label="Importe del gasto"><button class="remove" title="Eliminar gasto" aria-label="Eliminar gasto">×</button>`;
+    row.innerHTML = `<button type="button" class="emoji${e.emoji ? '' : ' empty'}" title="Cambiar emoji" aria-label="Cambiar emoji">${e.emoji ? escapeHtml(e.emoji) : '+'}${e.emoji ? '<span class="plus">+</span>' : ''}</button><input class="name" value="${escapeHtml(e.name)}" aria-label="Nombre del gasto"><input class="amount" type="text" value="${toInput(e.amount)}" placeholder="0,00" inputmode="decimal" aria-label="Importe del gasto"><button type="button" class="move" title="${t === 'f' ? 'Pasar a gastos variables' : 'Pasar a gastos fijos'}" aria-label="${t === 'f' ? 'Pasar a gastos variables' : 'Pasar a gastos fijos'}">⇅</button><button class="remove" title="Eliminar gasto" aria-label="Eliminar gasto">×</button>`;
     row.querySelector('.name').oninput = ev => { expenses[i].name = ev.target.value; saveExpenseDebounced(expenses[i]); };
     row.querySelector('.amount').oninput = ev => { expenses[i].amount = ev.target.value; calculate(); saveExpenseDebounced(expenses[i]); };
     row.querySelector('.remove').onclick = () => removeExpense(i);
+    row.querySelector('.move').onclick = () => moveExpense(i);
 row.querySelector('.emoji').onclick = ev => { ev.stopPropagation(); openEmojiPicker(ev.currentTarget, i); };
-    expensesEl.append(row);
+    (t === 'v' ? variableEl : fixedEl).append(row);
   });
   calculate();
 }
@@ -431,6 +461,9 @@ function calculate(){
   const total = expenses.reduce((sum, e) => sum + toNum(e.amount), 0);
   const left = s - total, pct = s ? total / s * 100 : 0;
   $('#total').textContent = money(total);
+  const sumOf = type => expenses.filter(e => typeOf(e) === type).reduce((sum, e) => sum + toNum(e.amount), 0);
+  $('#totalFixed').textContent = money(sumOf('f'));
+  $('#totalVariable').textContent = money(sumOf('v'));
   $('#percentage').textContent = `${Math.round(pct)} %`;
   $('#remaining').textContent = money(left);
   $('#remainingBox').classList.toggle('negative', left < 0);
@@ -505,21 +538,33 @@ const saveExpenseDebounced = debounce(async (expense) => {
 
 $('#salary').oninput = e => { salary = e.target.value; calculate(); saveSalaryDebounced(); };
 
-$('#addExpense').onclick = async () => {
+async function addExpense(type){
   if (!currentUser) return;
   setStatus('Guardando…', 'saving');
   const { data, error } = await sb.from('expenses').insert({ user_id: currentUser.id, emoji: '', name: 'Nuevo gasto', amount: 0 }).select().single();
   if (error) { setStatus('Error al guardar', 'error'); return; }
   expenses.push({ id: data.id, emoji: data.emoji, name: data.name, amount: data.amount });
+  if (type === 'v') { expenseTypes[data.id] = 'v'; await saveTypes(); }
   render();
   setStatus('✓ Guardado en la nube', 'ok');
-  const last = expensesEl.lastElementChild;
+  const last = (type === 'v' ? variableEl : fixedEl).lastElementChild;
   if (last) last.querySelector('.name').focus();
-};
+}
+document.querySelectorAll('.addSmall').forEach(b => { b.onclick = () => addExpense(b.dataset.type); });
+
+async function moveExpense(i){
+  const e = expenses[i];
+  if (typeOf(e) === 'v') delete expenseTypes[e.id]; else expenseTypes[e.id] = 'v';
+  render();
+  setStatus('Guardando…', 'saving');
+  const { error } = await saveTypes();
+  setStatus(error ? 'Error al guardar' : '✓ Guardado en la nube', error ? 'error' : 'ok');
+}
 
 async function removeExpense(i){
   const e = expenses[i];
   expenses.splice(i, 1);
+  if (expenseTypes[e.id]) { delete expenseTypes[e.id]; saveTypes(); }
   render();
   setStatus('Guardando…', 'saving');
   const { error } = await sb.from('expenses').delete().eq('id', e.id);
@@ -536,6 +581,8 @@ $('#reset').onclick = async () => {
   const { data: inserted } = await sb.from('expenses').insert(toInsert).select();
   salary = 0;
   expenses = (inserted || []).map(r => ({ id: r.id, emoji: r.emoji, name: r.name, amount: r.amount }));
+  expenseTypes = typesForDefaults(inserted);
+  await saveTypes();
   render();
   setStatus('✓ Guardado en la nube', 'ok');
 };
@@ -671,6 +718,15 @@ document.querySelectorAll('.toggle').forEach(btn => {
     "Organiza tus ingresos y decide a dónde va cada euro.": ["Organizza le tue entrate e decidi dove va ogni euro.", "Organise your income and decide where every euro goes."],
     "Cerrar sesión": ["Esci", "Sign out"],
     "Ingresos": ["Entrate", "Income"],
+    "📌 Gastos fijos": ["📌 Spese fisse", "📌 Fixed expenses"],
+    "🔄 Gastos variables": ["🔄 Spese variabili", "🔄 Variable expenses"],
+    "Los que pagas igual cada mes: renta, facturas, seguros, suscripciones…": ["Quelle che paghi uguali ogni mese: affitto, bollette, assicurazioni, abbonamenti…", "The ones you pay the same every month: rent, bills, insurance, subscriptions…"],
+    "Los que cambian de un mes a otro: comida, ocio, ropa, caprichos…": ["Quelle che cambiano da un mese all'altro: cibo, svago, vestiti, sfizi…", "The ones that change month to month: food, leisure, clothes, treats…"],
+    "+ Añadir gasto fijo": ["+ Aggiungi spesa fissa", "+ Add fixed expense"],
+    "+ Añadir gasto variable": ["+ Aggiungi spesa variabile", "+ Add variable expense"],
+    "Pasar a gastos variables": ["Sposta nelle spese variabili", "Move to variable expenses"],
+    "Pasar a gastos fijos": ["Sposta nelle spese fisse", "Move to fixed expenses"],
+    "Nuevo gasto": ["Nuova spesa", "New expense"],
     "Porcentaje de los ingresos": ["Percentuale delle entrate", "Share of income"],
     "Porcentaje de los ingresos destinado a gastos": ["Percentuale delle entrate destinata alle spese", "Share of income spent on expenses"],
     "Ocultar / mostrar": ["Nascondi / mostra", "Hide / show"],
