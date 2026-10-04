@@ -76,6 +76,11 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .move { width:30px; height:30px; padding:0; color:#8a94a8; background:transparent; font-size:1rem; }
 .move:hover { color:var(--blue); background:#eef3ff; }
 /* plegar secciones */
+.miniSum { display:none; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.miniSum span { background:var(--soft); border-radius:99px; padding:6px 12px; font-size:.86rem; font-weight:600; color:var(--muted); white-space:nowrap; }
+.miniSum b { color:var(--ink); margin-left:4px; }
+.card.collapsed .miniSum { display:flex; }
+@media (max-width:620px) { .card.collapsed .card-top { flex-wrap:wrap; } .miniSum { flex-basis:100%; justify-content:flex-start; } }
 .toggle { width:30px; height:30px; padding:0; margin-right:8px; border-radius:8px; background:var(--soft); color:var(--muted); font-size:1rem; line-height:30px; vertical-align:middle; transition:transform .2s, background .15s; }
 .toggle:hover { background:#eaf0ff; color:var(--blue); transform:none; }
 .card.collapsed .toggle { transform:rotate(-90deg); }
@@ -187,7 +192,7 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 <div class="remaining" id="remainingBox"><small>Te queda después de gastos</small><strong id="remaining">0,00 €</strong></div>
 </section>
 <section class="card">
-<div class="card-top"><h2><button type="button" class="toggle" data-key="gastos" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>Tus gastos mensuales</h2></div>
+<div class="card-top"><h2><button type="button" class="toggle" data-key="gastos" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>Tus gastos mensuales</h2><div class="miniSum"><span>📌 Fijos<b id="msF">0,00 €</b></span><span>🔄 Variables<b id="msV">0,00 €</b></span><span>Total<b id="msT">0,00 €</b></span></div></div>
 <div class="group">
   <div class="groupTop"><h3>📌 Gastos fijos</h3><span class="groupTotal" id="totalFixed">0,00 €</span></div>
   <p class="groupHint">Los que pagas igual cada mes: renta, facturas, seguros, suscripciones…</p>
@@ -464,6 +469,9 @@ function calculate(){
   const sumOf = type => expenses.filter(e => typeOf(e) === type).reduce((sum, e) => sum + toNum(e.amount), 0);
   $('#totalFixed').textContent = money(sumOf('f'));
   $('#totalVariable').textContent = money(sumOf('v'));
+  $('#msF').textContent = money(sumOf('f'));
+  $('#msV').textContent = money(sumOf('v'));
+  $('#msT').textContent = money(total);
   $('#percentage').textContent = `${Math.round(pct)} %`;
   $('#remaining').textContent = money(left);
   $('#remainingBox').classList.toggle('negative', left < 0);
@@ -718,6 +726,9 @@ document.querySelectorAll('.toggle').forEach(btn => {
     "Organiza tus ingresos y decide a dónde va cada euro.": ["Organizza le tue entrate e decidi dove va ogni euro.", "Organise your income and decide where every euro goes."],
     "Cerrar sesión": ["Esci", "Sign out"],
     "Ingresos": ["Entrate", "Income"],
+    "📌 Fijos": ["📌 Fisse", "📌 Fixed"],
+    "🔄 Variables": ["🔄 Variabili", "🔄 Variable"],
+    "Total": ["Totale", "Total"],
     "📌 Gastos fijos": ["📌 Spese fisse", "📌 Fixed expenses"],
     "🔄 Gastos variables": ["🔄 Spese variabili", "🔄 Variable expenses"],
     "Los que pagas igual cada mes: renta, facturas, seguros, suscripciones…": ["Quelle che paghi uguali ogni mese: affitto, bollette, assicurazioni, abbonamenti…", "The ones you pay the same every month: rent, bills, insurance, subscriptions…"],
