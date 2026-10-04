@@ -174,7 +174,7 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 // ---- Supabase setup ----
 const SUPABASE_URL = 'https://nhhskvauwdudhojjvodi.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_0EouCOgtpq146qgFsMusDg_bvQh58MI';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'alesagli-auth' } });
 
 const $ = s => document.querySelector(s);
 const authWrap = $('#authWrap'), appWrap = $('#appWrap');
@@ -291,7 +291,7 @@ function translateAuthError(msg){
   return msg;
 }
 
-$('#logout').onclick = async () => { await sb.auth.signOut(); };
+$('#logout').onclick = async () => { await sb.auth.signOut({ scope: 'local' }); };
 
 // Supabase can fire onAuthStateChange more than once for the same session
 // (e.g. INITIAL_SESSION followed by SIGNED_IN, or a token refresh). Guard
