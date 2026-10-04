@@ -74,6 +74,7 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .card.collapsed .card-top { margin-bottom:0; }
 .card.collapsed .card-top .add { display:none; }
 /* ahorro */
+.titleEmoji { display:inline-grid; vertical-align:middle; margin-right:10px; }
 .savingsGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
 .field label { display:block; font-weight:700; font-size:.88rem; color:var(--muted); margin-bottom:6px; }
 .field input { width:100%; padding:11px 13px; border:1px solid var(--line); background:#f8faff; border-radius:10px; color:var(--ink); font:inherit; font-size:1.1rem; font-weight:700; outline:none; }
@@ -185,7 +186,7 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 <button class="reset" id="reset">Restablecer presupuesto</button>
 </section>
 <section class="card" id="savingsCard">
-<div class="card-top"><h2><button type="button" class="toggle" data-key="ahorro" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>🐷 Tu ahorro</h2></div>
+<div class="card-top"><h2><button type="button" class="toggle" data-key="ahorro" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button><button type="button" class="emoji titleEmoji" id="savingsEmoji" title="Cambiar emoji" aria-label="Cambiar emoji">🐷<span class="plus">+</span></button>Tu ahorro</h2></div>
 <div class="savingsGrid">
   <div class="field"><label for="savedNow">Cuánto tienes ahorrado</label><input id="savedNow" type="text" inputmode="decimal" placeholder="Ej. 2500"></div>
   <div class="field"><label for="savingsGoal">Cuánto quieres ahorrar (objetivo)</label><input id="savingsGoal" type="text" inputmode="decimal" placeholder="Ej. 10000"></div>
@@ -439,9 +440,18 @@ function calculate(){
 
 // ---- Ahorro (se guarda en los datos de tu cuenta) ----
 let savings = { now: '', goal: '', monthly: '' };
+let savingsEmoji = '🐷';
+function renderSavingsEmoji(){
+  const b = $('#savingsEmoji');
+  b.classList.toggle('empty', !savingsEmoji);
+  b.innerHTML = savingsEmoji ? escapeHtml(savingsEmoji) + '<span class="plus">+</span>' : '+';
+}
+$('#savingsEmoji').onclick = ev => { ev.stopPropagation(); openEmojiPicker(ev.currentTarget, 'savings'); };
 function loadSavings(){
   const m = (currentUser && currentUser.user_metadata) || {};
   savings = { now: m.savings_now ?? '', goal: m.savings_goal ?? '', monthly: m.savings_monthly ?? '' };
+  savingsEmoji = m.savings_emoji ?? '🐷';
+  renderSavingsEmoji();
   $('#savedNow').value = toInput(savings.now);
   $('#savingsGoal').value = toInput(savings.goal);
   $('#monthlySaving').value = toInput(savings.monthly);
@@ -538,7 +548,7 @@ EMOJI_OPTIONS.forEach(em => { const b = document.createElement('button'); b.type
 function openEmojiPicker(btn, i){
 if (pickerIndex === i && !picker.hidden) { closeEmojiPicker(); return; }
 pickerIndex = i;
-const current = expenses[i].emoji;
+const current = i === 'savings' ? savingsEmoji : expenses[i].emoji;
 emojiGrid.querySelectorAll('button').forEach(b => b.classList.toggle('selected', b.textContent === current));
 emojiCustom.value = '';
 picker.hidden = false;
@@ -557,6 +567,16 @@ return Array.from(text)[0];
 }
 async function chooseEmoji(emoji){
 if (pickerIndex === null) return;
+if (pickerIndex === 'savings') {
+  closeEmojiPicker();
+  savingsEmoji = emoji;
+  renderSavingsEmoji();
+  if (!currentUser) return;
+  setStatus('Guardando…', 'saving');
+  const { error } = await sb.auth.updateUser({ data: { savings_emoji: emoji } });
+  setStatus(error ? 'Error al guardar' : '✓ Guardado en la nube', error ? 'error' : 'ok');
+  return;
+}
 const e = expenses[pickerIndex];
 closeEmojiPicker();
 e.emoji = emoji;
@@ -680,7 +700,7 @@ document.querySelectorAll('.toggle').forEach(btn => {
     "Elegir emoji": ["Scegli emoji", "Choose emoji"],
     "O escribe/pega otro emoji": ["Oppure scrivi/incolla un'altra emoji", "Or type/paste another emoji"],
     "Otro emoji": ["Altra emoji", "Other emoji"],
-    "🐷 Tu ahorro": ["🐷 I tuoi risparmi", "🐷 Your savings"],
+    "Tu ahorro": ["I tuoi risparmi", "Your savings"],
     "Cuánto tienes ahorrado": ["Quanto hai risparmiato", "How much you've saved"],
     "Cuánto quieres ahorrar (objetivo)": ["Quanto vuoi risparmiare (obiettivo)", "How much you want to save (goal)"],
     "Cuánto ahorras al mes": ["Quanto risparmi al mese", "How much you save per month"],
