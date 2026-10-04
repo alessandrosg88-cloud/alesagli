@@ -66,6 +66,22 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .bar i { display:block; height:100%; width:0%; border-radius:99px; background:linear-gradient(90deg,var(--blue),#6f8dff); transition:width .3s; }
 .hint { color:var(--muted); font-size:.88rem; margin:19px 0 0; }
 .reset { margin-top:14px; color:var(--muted); background:transparent; padding:7px 0; font-size:.86rem; text-decoration:underline; }
+/* ahorro */
+.savingsGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.field label { display:block; font-weight:700; font-size:.88rem; color:var(--muted); margin-bottom:6px; }
+.field input { width:100%; padding:11px 13px; border:1px solid var(--line); background:#f8faff; border-radius:10px; color:var(--ink); font:inherit; font-size:1.1rem; font-weight:700; outline:none; }
+.field input:focus { background:#fff; border-color:var(--blue); }
+.goalBox { margin-top:22px; padding:20px; border-radius:16px; background:linear-gradient(135deg,#eafaf3,#f2f6ff); }
+.goalTop { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; font-weight:700; }
+.goalTop strong { font-size:1.6rem; letter-spacing:-.04em; }
+.goalBar { height:12px; overflow:hidden; background:#dfe6f1; border-radius:99px; margin:12px 0 10px; }
+.goalBar i { display:block; height:100%; width:0%; border-radius:99px; background:linear-gradient(90deg,var(--green),#4fd1a1); transition:width .3s; }
+.goalMsg { margin:0; color:var(--muted); font-size:.92rem; }
+.goalMsg b { color:var(--ink); }
+.proj h3 { margin:22px 0 10px; font-size:1rem; }
+.projGrid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.projGrid .metric strong { font-size:1.2rem; color:var(--green); }
+@media (max-width:620px) { .savingsGrid { grid-template-columns:1fr; } .projGrid { grid-template-columns:1fr 1fr; } }
 /* auth */
 .authWrap { width:min(420px,calc(100% - 32px)); margin:0 auto; padding:64px 0; }
 .authCard { background:#fff; border:1px solid #e9edf4; border-radius:24px; padding:32px; box-shadow:0 12px 32px #2439650e; }
@@ -160,6 +176,29 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 <div class="bar" aria-label="Porcentaje del salario destinado a gastos"><i id="bar"></i></div>
 <p class="hint">Escribe el nombre y el importe de todos tus gastos: comida, renta, transporte, ocio, deudas o cualquier otro.</p>
 <button class="reset" id="reset">Restablecer presupuesto</button>
+</section>
+<section class="card" id="savingsCard">
+<div class="card-top"><h2>🐷 Tu ahorro</h2></div>
+<div class="savingsGrid">
+  <div class="field"><label for="savedNow">Cuánto tienes ahorrado</label><input id="savedNow" type="text" inputmode="decimal" placeholder="Ej. 2500"></div>
+  <div class="field"><label for="savingsGoal">Cuánto quieres ahorrar (objetivo)</label><input id="savingsGoal" type="text" inputmode="decimal" placeholder="Ej. 10000"></div>
+  <div class="field"><label for="monthlySaving">Cuánto ahorras al mes</label><input id="monthlySaving" type="text" inputmode="decimal" placeholder="Lo que te sobra"></div>
+</div>
+<div class="goalBox">
+  <div class="goalTop"><span>Progreso hacia tu objetivo</span><strong id="goalPct">0 %</strong></div>
+  <div class="goalBar" aria-label="Progreso del objetivo de ahorro"><i id="goalBar"></i></div>
+  <p class="goalMsg" id="goalMsg">Escribe tu objetivo de ahorro para ver cuánto te falta.</p>
+</div>
+<div class="proj">
+  <h3>Ahorro que puedes llegar a tener</h3>
+  <div class="projGrid">
+    <div class="metric"><span>En 6 meses</span><strong id="p6">0,00 €</strong></div>
+    <div class="metric"><span>En 1 año</span><strong id="p12">0,00 €</strong></div>
+    <div class="metric"><span>En 3 años</span><strong id="p36">0,00 €</strong></div>
+    <div class="metric"><span>En 5 años</span><strong id="p60">0,00 €</strong></div>
+  </div>
+</div>
+<p class="hint">Si dejas vacío «Cuánto ahorras al mes», se usa lo que te queda después de gastos.</p>
 </section>
 </main>
 
@@ -315,6 +354,7 @@ sb.auth.onAuthStateChange((_event, session) => {
     if (loadedForUserId !== currentUser.id) {
       loadedForUserId = currentUser.id;
       loadUserData();
+      loadSavings();
     }
   } else {
     loadedForUserId = null;
@@ -387,7 +427,49 @@ function calculate(){
   $('#remaining').textContent = money(left);
   $('#remainingBox').classList.toggle('negative', left < 0);
   $('#bar').style.width = `${Math.min(pct, 100)}%`;
+  calcSavings(left);
 }
+
+// ---- Ahorro (se guarda en los datos de tu cuenta) ----
+let savings = { now: '', goal: '', monthly: '' };
+function loadSavings(){
+  const m = (currentUser && currentUser.user_metadata) || {};
+  savings = { now: m.savings_now ?? '', goal: m.savings_goal ?? '', monthly: m.savings_monthly ?? '' };
+  $('#savedNow').value = toInput(savings.now);
+  $('#savingsGoal').value = toInput(savings.goal);
+  $('#monthlySaving').value = toInput(savings.monthly);
+  calculate();
+}
+function calcSavings(left){
+  const now = toNum(savings.now), goal = toNum(savings.goal);
+  const monthly = String(savings.monthly).trim() === '' ? Math.max(left, 0) : toNum(savings.monthly);
+  [6,12,36,60].forEach(n => { $('#p' + n).textContent = money(now + monthly * n); });
+  const pct = goal > 0 ? Math.min(now / goal * 100, 100) : 0;
+  $('#goalPct').textContent = `${Math.round(pct)} %`;
+  $('#goalBar').style.width = `${pct}%`;
+  const msg = $('#goalMsg');
+  const part = (t, bold) => { const el = document.createElement(bold ? 'b' : 'span'); el.textContent = t; return el; };
+  msg.innerHTML = '';
+  if (!(goal > 0)) { msg.append(part('Escribe tu objetivo de ahorro para ver cuánto te falta.')); return; }
+  const missing = goal - now;
+  if (missing <= 0) { msg.append(part('¡Objetivo conseguido! 🎉')); return; }
+  msg.append(part('Te faltan'), ' ', part(money(missing), true), ' ');
+  if (monthly > 0) {
+    const months = Math.ceil(missing / monthly);
+    msg.append(part('para tu objetivo. Ahorrando'), ' ', part(money(monthly), true), ' ', part('al mes lo conseguirás en'), ' ', part(String(months), true), ' ', part(months === 1 ? 'mes.' : 'meses.'));
+  } else {
+    msg.append(part('para tu objetivo. Indica cuánto ahorras al mes para calcular cuándo lo conseguirás.'));
+  }
+}
+const saveSavingsDebounced = debounce(async () => {
+  if (!currentUser) return;
+  setStatus('Guardando…', 'saving');
+  const { error } = await sb.auth.updateUser({ data: { savings_now: toNum(savings.now), savings_goal: toNum(savings.goal), savings_monthly: String(savings.monthly).trim() === '' ? '' : toNum(savings.monthly) } });
+  setStatus(error ? 'Error al guardar' : '✓ Guardado en la nube', error ? 'error' : 'ok');
+}, 600);
+$('#savedNow').oninput = e => { savings.now = e.target.value; calculate(); saveSavingsDebounced(); };
+$('#savingsGoal').oninput = e => { savings.goal = e.target.value; calculate(); saveSavingsDebounced(); };
+$('#monthlySaving').oninput = e => { savings.monthly = e.target.value; calculate(); saveSavingsDebounced(); };
 
 // ---- Persistence ----
 const saveSalaryDebounced = debounce(async () => {
@@ -578,6 +660,29 @@ window.addEventListener('resize', closeEmojiPicker);
     "Elegir emoji": ["Scegli emoji", "Choose emoji"],
     "O escribe/pega otro emoji": ["Oppure scrivi/incolla un'altra emoji", "Or type/paste another emoji"],
     "Otro emoji": ["Altra emoji", "Other emoji"],
+    "🐷 Tu ahorro": ["🐷 I tuoi risparmi", "🐷 Your savings"],
+    "Cuánto tienes ahorrado": ["Quanto hai risparmiato", "How much you've saved"],
+    "Cuánto quieres ahorrar (objetivo)": ["Quanto vuoi risparmiare (obiettivo)", "How much you want to save (goal)"],
+    "Cuánto ahorras al mes": ["Quanto risparmi al mese", "How much you save per month"],
+    "Lo que te sobra": ["Quello che ti avanza", "What you have left"],
+    "Ej. 2500": ["Es. 2500", "e.g. 2500"],
+    "Ej. 10000": ["Es. 10000", "e.g. 10000"],
+    "Progreso hacia tu objetivo": ["Progresso verso il tuo obiettivo", "Progress towards your goal"],
+    "Progreso del objetivo de ahorro": ["Progresso dell'obiettivo di risparmio", "Savings goal progress"],
+    "Escribe tu objetivo de ahorro para ver cuánto te falta.": ["Scrivi il tuo obiettivo di risparmio per vedere quanto ti manca.", "Enter your savings goal to see how much is left."],
+    "¡Objetivo conseguido! 🎉": ["Obiettivo raggiunto! 🎉", "Goal reached! 🎉"],
+    "Te faltan": ["Ti mancano", "You still need"],
+    "para tu objetivo. Ahorrando": ["per il tuo obiettivo. Risparmiando", "for your goal. Saving"],
+    "al mes lo conseguirás en": ["al mese lo raggiungerai in", "a month you'll reach it in"],
+    "meses.": ["mesi.", "months."],
+    "mes.": ["mese.", "month."],
+    "para tu objetivo. Indica cuánto ahorras al mes para calcular cuándo lo conseguirás.": ["per il tuo obiettivo. Indica quanto risparmi al mese per calcolare quando lo raggiungerai.", "for your goal. Enter how much you save per month to see when you'll reach it."],
+    "Ahorro que puedes llegar a tener": ["Risparmi che puoi arrivare ad avere", "Savings you could reach"],
+    "En 6 meses": ["Tra 6 mesi", "In 6 months"],
+    "En 1 año": ["Tra 1 anno", "In 1 year"],
+    "En 3 años": ["Tra 3 anni", "In 3 years"],
+    "En 5 años": ["Tra 5 anni", "In 5 years"],
+    "Si dejas vacío «Cuánto ahorras al mes», se usa lo que te queda después de gastos.": ["Se lasci vuoto «Quanto risparmi al mese», si usa quello che ti resta dopo le spese.", "If you leave «How much you save per month» empty, what's left after expenses is used."],
     "Compartir": ["Condividi", "Share"],
     "Más opciones…": ["Altre opzioni…", "More options…"],
     "Mensaje de texto": ["Messaggio di testo", "Text message"],
