@@ -23,7 +23,7 @@ const URL_ALL = 'https://open.er-api.com/v6/latest/EUR';
 const URL_VE = 'https://ve.dolarapi.com/v1/dolares';
 const FX_KEY = 'alesagli-fx', CUR_KEY = 'alesagli-moneda';
 const MAX_AGE = 24 * 60 * 60 * 1000; // las tasas se actualizan cada día
-const VE_KEY = 'alesagli-venezuela';
+const VE_KEY = 'alesagli-venezuela-v2'; // v2: se vuelve a preguntar a todos los usuarios
 let veOn = store.get(VE_KEY) === '1'; // el bolívar BCV / paralelo solo si la persona lo activa
 
 // Monedas que se muestran en la tabla de tasas (las más usadas)
@@ -212,8 +212,8 @@ function renderVeAsk(){
   const asked = store.get(VE_KEY) !== null;
   if (!ask) {
     ask = document.createElement('div'); ask.id = 'fxVeAsk';
-    ask.style.cssText = 'margin-top:16px;padding:14px 16px;border-radius:15px;background:var(--soft);border:2px solid var(--blue);display:flex;flex-wrap:wrap;align-items:center;gap:10px';
-    opt.parentNode.insertBefore(ask, opt);
+    ask.style.cssText = 'margin-top:22px;padding:14px 16px;border-radius:15px;background:var(--card, #fff);border:2px solid var(--blue);box-shadow:0 12px 32px #2439650e;display:flex;flex-wrap:wrap;align-items:center;gap:10px';
+    const card = $('#fxCard'); card.parentNode.insertBefore(ask, card); // fuera de la tarjeta: se ve aunque esté plegada
   }
   ask.hidden = asked; ask.style.display = asked ? 'none' : 'flex';
   opt.style.display = asked ? '' : 'none';
