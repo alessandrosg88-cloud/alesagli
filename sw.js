@@ -1,7 +1,7 @@
 // Service worker de Mi presupuesto: permite instalar la app y abrirla sin conexión.
 // Nunca guarda en caché las peticiones a Supabase (tus datos), solo los archivos de la propia app.
-const CACHE = 'mi-presupuesto-v1';
-const ASSETS = ['./', 'index.html', 'extra.js', 'supabase.min.js', 'manifest.webmanifest', 'icon.svg','privacidad.html', 'terminos.html'];
+const CACHE = 'mi-presupuesto-v2';
+const ASSETS = ['./', 'index.html', 'extra.js', 'monedas.js', 'supabase.min.js', 'manifest.webmanifest', 'icon.svg','privacidad.html', 'terminos.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
