@@ -35,121 +35,190 @@
 
   <article lang="es" data-lang="es">
     <h1>Política de privacidad y cookies</h1>
-    <p class="muted">Última actualización: 29 de septiembre de 2026</p>
+    <p class="muted">Última actualización: 5 de octubre de 2026</p>
     <h2>1. Responsable</h2>
     <p>Alessandro Saglimbeni · <a href="mailto:alessandrosg88@gmail.com">alessandrosg88@gmail.com</a></p>
     <h2>2. Qué datos tratamos</h2>
     <ul>
-      <li>Tu correo electrónico y tu contraseña (la contraseña se guarda cifrada; nunca podemos verla).</li>
-      <li>Los datos financieros personales que introduces en la aplicación y que quedan asociados a tu cuenta (salario, presupuesto, gastos, ahorros, inversiones, categorías y notas).</li>
-      <li>Datos técnicos imprescindibles, como la dirección IP, que los proveedores registran por seguridad.</li>
+      <li><strong>Tu cuenta:</strong> correo electrónico, contraseña (se guarda cifrada con un hash; nunca podemos verla) y la fecha de tu último acceso.</li>
+      <li><strong>Tu presupuesto, guardado en la nube y asociado a tu cuenta:</strong> ingresos y otros ingresos; gastos fijos y variables (nombre, importe y emoji); ahorro y objetivos de ahorro; los gastos que apuntas (fecha, importe, categoría y nota opcional); un resumen mensual para el historial y los gráficos; el día de cobro de tus gastos fijos y los meses elegidos para el fondo de emergencia.</li>
+      <li><strong>Extractos del banco (CSV):</strong> el archivo se lee solo dentro de tu navegador y nunca se sube. Solo se guardan los movimientos que tú eliges importar (fecha, concepto, importe y categoría).</li>
+      <li><strong>Datos técnicos imprescindibles</strong>, como la dirección IP, que los proveedores registran por seguridad.</li>
     </ul>
+    <p>No pedimos datos bancarios, de tarjeta ni datos sensibles (art. 9 del RGPD). Te pedimos que no escribas números de cuenta, de tarjeta ni contraseñas en los nombres o en las notas.</p>
     <h2>3. Para qué los usamos</h2>
-    <p>Solo para crear y mantener tu cuenta, guardar tus datos para que puedas verlos desde cualquier dispositivo y enviarte los correos necesarios (confirmar la cuenta o recuperar la contraseña). No hay publicidad, no hacemos perfiles y no vendemos ni cedemos tus datos a nadie.</p>
+    <p>Solo para crear y mantener tu cuenta, guardar tus datos para que puedas verlos desde cualquier dispositivo, proteger el servicio y enviarte los correos necesarios (confirmar la cuenta o cambiar la contraseña). No hay publicidad, no hacemos perfiles y no vendemos ni cedemos tus datos a nadie.</p>
+    <p>Los consejos, la regla 50/30/20, los gráficos y el fondo de emergencia se calculan en tu propio navegador a partir de tus datos. Son solo información para ti: no se usan para tomar decisiones automatizadas sobre ti (art. 22 del RGPD).</p>
     <h2>4. Base legal</h2>
-    <p>La prestación del servicio que solicitas al crear tu cuenta (art. 6.1.b del RGPD).</p>
+    <ul>
+      <li>Prestarte el servicio que solicitas al crear tu cuenta (art. 6.1.b del RGPD).</li>
+      <li>Nuestro interés legítimo en mantener el servicio seguro: registros técnicos, límite de intentos de inicio de sesión y comprobación de contraseñas filtradas (art. 6.1.f del RGPD).</li>
+      <li>Tu consentimiento para los avisos de pagos, que das cuando el navegador te pide permiso para mostrar notificaciones (art. 6.1.a del RGPD). Puedes retirarlo cuando quieras desde los ajustes del navegador.</li>
+    </ul>
     <h2>5. Proveedores que nos ayudan</h2>
     <ul>
-      <li><strong>Supabase</strong>: base de datos e inicio de sesión. Los datos se guardan en servidores de la Unión Europea (Irlanda).</li>
-      <li><strong>GitHub (GitHub Pages)</strong>: aloja las páginas web y puede registrar tu dirección IP por motivos de seguridad.</li>
+      <li><strong>Supabase</strong> (Supabase Inc.): base de datos e inicio de sesión. Tus datos se guardan en servidores de Amazon Web Services en Irlanda (Unión Europea).</li>
+      <li><strong>GitHub Pages</strong> (GitHub Inc.): aloja los archivos de la web y puede registrar tu dirección IP por seguridad.</li>
+      <li><strong>Have I Been Pwned</strong>: comprueba si una contraseña nueva ha aparecido en filtraciones. Solo recibe los 5 primeros caracteres de un resumen cifrado (hash SHA‑1), nunca tu contraseña ni tu correo, por lo que no puede saber quién eres.</li>
     </ul>
-    <p>Ambos actúan como encargados del tratamiento. Si hubiera alguna transferencia fuera de la UE, se ampara en el Marco de Privacidad de Datos UE–EE. UU. o en cláusulas contractuales tipo.</p>
-    <h2>6. Cuánto tiempo los guardamos</h2>
-    <p>Mientras tengas la cuenta. Si pides que la borremos, eliminamos tu cuenta y tus datos en un plazo máximo de 30 días.</p>
-    <h2>7. Tus derechos</h2>
-    <p>Puedes pedir acceso, rectificación, supresión, limitación u oposición, y la portabilidad de tus datos, escribiendo a <a href="mailto:alessandrosg88@gmail.com">alessandrosg88@gmail.com</a>. También puedes presentar una reclamación ante la autoridad de protección de datos de tu país.</p>
-    <h2>8. Cookies y almacenamiento local</h2>
-    <p>Usamos solo almacenamiento técnico necesario para que la página funcione:</p>
+    <p>Supabase y GitHub actúan como encargados del tratamiento con contrato conforme al art. 28 del RGPD. Si hubiera alguna transferencia fuera de la UE, se ampara en el Marco de Privacidad de Datos UE–EE. UU. o en cláusulas contractuales tipo.</p>
+    <h2>6. Cómo protegemos tus datos</h2>
     <ul>
-      <li>La sesión de inicio de sesión (Supabase, en el almacenamiento local del navegador).</li>
-      <li>Una copia local de tus datos para que la página cargue rápido.</li>
-      <li>Tus preferencias, como el idioma. El aviso de cookies se muestra en cada visita y no se guarda si lo has aceptado.</li>
+      <li>Todas las conexiones van cifradas (HTTPS).</li>
+      <li>Cada persona solo puede ver y modificar sus propios datos: lo garantiza la propia base de datos (Row Level Security).</li>
+      <li>La página solo puede conectarse a los servicios indicados aquí (política de seguridad de contenidos).</li>
+      <li>Las contraseñas nuevas deben tener al menos 8 caracteres, se comprueba su fuerza y si han aparecido en filtraciones.</li>
+      <li>Tras varios intentos fallidos de inicio de sesión, hay que esperar antes de volver a intentarlo.</li>
+      <li>Tienes a tu disposición el bloqueo automático por inactividad, la opción de ocultar importes y el cierre de sesión en todos tus dispositivos.</li>
     </ul>
-    <p>No usamos cookies de análisis, publicidad ni de terceros, por eso no hace falta pedir tu consentimiento (art. 5.3 de la Directiva ePrivacy). Puedes borrar estos datos desde tu navegador en cualquier momento; al hacerlo se cerrará tu sesión.</p>
-    <h2>9. Recursos externos</h2>
-    <p>Las fuentes tipográficas y las librerías se sirven desde este mismo sitio. No se carga nada desde Google ni desde otros servidores de terceros, salvo la conexión con Supabase para guardar tus datos. Al crear una cuenta o cambiar la contraseña, comprobamos si esa contraseña ha aparecido en filtraciones públicas usando el servicio Have I Been Pwned: solo se envían los 5 primeros caracteres de un resumen cifrado (hash SHA‑1), nunca tu contraseña ni tu correo. Los avisos de pagos son notificaciones del propio navegador y no salen de tu dispositivo.</p>
-    <h2>10. Cambios</h2>
-    <p>Si cambiamos esta política, actualizaremos la fecha de arriba.</p>
+    <p>Ninguna medida es infalible. Si se produjera una brecha de seguridad que afecte a tus datos, lo comunicaremos a la autoridad y, cuando corresponda, a ti, como exige el RGPD (arts. 33 y 34).</p>
+    <h2>7. Cuánto tiempo los guardamos</h2>
+    <p>Mientras tengas la cuenta. Si pides que la borremos, eliminamos tu cuenta y todos tus datos en un plazo máximo de 30 días. La copia de tus datos que se guarda en tu navegador se borra al cerrar sesión.</p>
+    <h2>8. Tus derechos</h2>
+    <p>Puedes pedir acceso, rectificación, supresión, limitación u oposición, y la portabilidad de tus datos, escribiendo a <a href="mailto:alessandrosg88@gmail.com">alessandrosg88@gmail.com</a>. Muchos los puedes ejercer tú directamente: corregir o borrar cualquier dato desde la aplicación, y llevarte una copia completa con «Descargar mis datos» (JSON) en «Seguridad y privacidad» o exportando tus movimientos y tu presupuesto en CSV. También puedes presentar una reclamación ante la autoridad de protección de datos de tu país.</p>
+    <h2>9. Edad mínima</h2>
+    <p>Para crear una cuenta debes tener al menos 16 años.</p>
+    <h2>10. Cookies y almacenamiento local</h2>
+    <p>No usamos cookies de análisis, publicidad ni de terceros. Solo guardamos en tu navegador lo estrictamente necesario para que la página funcione como pides:</p>
+    <ul>
+      <li>Tu sesión de inicio de sesión (Supabase).</li>
+      <li>Una copia de tus datos para que la página cargue rápido y funcione sin conexión. Se borra al cerrar sesión.</li>
+      <li>Tus preferencias: idioma, modo claro u oscuro, secciones plegadas, ocultar importes, bloqueo automático y meses del fondo de emergencia.</li>
+      <li>Datos de seguridad: el número de intentos fallidos de inicio de sesión y la hora de tu última actividad (para el bloqueo automático).</li>
+      <li>Que has aceptado el aviso de cookies, para no mostrártelo en cada visita.</li>
+      <li>Si instalas la app, una copia de los archivos de la web (no de tus datos) para poder abrirla sin conexión.</li>
+    </ul>
+    <p>Como todo es necesario para el servicio que pides, no hace falta tu consentimiento (art. 5.3 de la Directiva ePrivacy; en Alemania, § 25.2 TDDDG). Puedes borrar estos datos desde tu navegador en cualquier momento; al hacerlo se cerrará tu sesión.</p>
+    <h2>11. Avisos de pagos</h2>
+    <p>Solo los recibes si das permiso al navegador. Se generan en tu propio dispositivo a partir del día de cobro que eliges y no se envían a ningún servidor.</p>
+    <h2>12. Cambios</h2>
+    <p>Si cambiamos esta política, actualizaremos la fecha de arriba y, si el cambio es importante, te avisaremos en la aplicación.</p>
     <p>Consulta también los <a href="terminos.html">términos de uso y el aviso legal</a>.</p>
   </article>
 
   <article lang="it" data-lang="it" hidden>
     <h1>Informativa su privacy e cookie</h1>
-    <p class="muted">Ultimo aggiornamento: 29 settembre 2026</p>
+    <p class="muted">Ultimo aggiornamento: 5 ottobre 2026</p>
     <h2>1. Titolare</h2>
     <p>Alessandro Saglimbeni · <a href="mailto:alessandrosg88@gmail.com">alessandrosg88@gmail.com</a></p>
     <h2>2. Quali dati trattiamo</h2>
     <ul>
-      <li>La tua email e la tua password (la password è salvata cifrata; non possiamo mai vederla).</li>
-      <li>I dati finanziari personali che inserisci nell'applicazione e che restano associati al tuo account (stipendio, budget, spese, risparmi, investimenti, categorie e note).</li>
-      <li>Dati tecnici indispensabili, come l'indirizzo IP, registrati dai fornitori per motivi di sicurezza.</li>
+      <li><strong>Il tuo account:</strong> email, password (salvata cifrata con un hash; non possiamo mai vederla) e la data dell'ultimo accesso.</li>
+      <li><strong>Il tuo budget, salvato nel cloud e associato al tuo account:</strong> entrate e altre entrate; spese fisse e variabili (nome, importo ed emoji); risparmi e obiettivi di risparmio; le spese che annoti (data, importo, categoria e nota facoltativa); un riepilogo mensile per lo storico e i grafici; il giorno di addebito delle spese fisse e i mesi scelti per il fondo di emergenza.</li>
+      <li><strong>Estratti conto (CSV):</strong> il file viene letto solo nel tuo browser e non viene mai caricato. Si salvano solo i movimenti che scegli di importare (data, descrizione, importo e categoria).</li>
+      <li><strong>Dati tecnici indispensabili</strong>, come l'indirizzo IP, registrati dai fornitori per motivi di sicurezza.</li>
     </ul>
+    <p>Non chiediamo dati bancari, di carta né dati sensibili (art. 9 del GDPR). Ti chiediamo di non scrivere numeri di conto, di carta o password nei nomi o nelle note.</p>
     <h2>3. Perché li usiamo</h2>
-    <p>Solo per creare e mantenere il tuo account, salvare i tuoi dati così da poterli vedere da qualsiasi dispositivo e inviarti le email necessarie (conferma dell'account o recupero della password). Niente pubblicità, niente profilazione e non vendiamo né cediamo i tuoi dati a nessuno.</p>
+    <p>Solo per creare e mantenere il tuo account, salvare i tuoi dati così da poterli vedere da qualsiasi dispositivo, proteggere il servizio e inviarti le email necessarie (conferma dell'account o cambio password). Niente pubblicità, niente profilazione e non vendiamo né cediamo i tuoi dati a nessuno.</p>
+    <p>I consigli, la regola 50/30/20, i grafici e il fondo di emergenza sono calcolati nel tuo browser a partire dai tuoi dati. Sono solo informazioni per te: non vengono usati per decisioni automatizzate che ti riguardano (art. 22 del GDPR).</p>
     <h2>4. Base giuridica</h2>
-    <p>L'esecuzione del servizio che richiedi creando l'account (art. 6.1.b del GDPR).</p>
+    <ul>
+      <li>L'esecuzione del servizio che richiedi creando l'account (art. 6.1.b del GDPR).</li>
+      <li>Il nostro legittimo interesse a mantenere sicuro il servizio: log tecnici, limite ai tentativi di accesso e verifica delle password violate (art. 6.1.f del GDPR).</li>
+      <li>Il tuo consenso agli avvisi di pagamento, che dai quando il browser ti chiede il permesso per le notifiche (art. 6.1.a del GDPR). Puoi revocarlo quando vuoi dalle impostazioni del browser.</li>
+    </ul>
     <h2>5. Fornitori</h2>
     <ul>
-      <li><strong>Supabase</strong>: database e accesso. I dati sono conservati su server nell'Unione Europea (Irlanda).</li>
-      <li><strong>GitHub (GitHub Pages)</strong>: ospita le pagine web e può registrare il tuo indirizzo IP per motivi di sicurezza.</li>
+      <li><strong>Supabase</strong> (Supabase Inc.): database e accesso. I tuoi dati sono conservati su server di Amazon Web Services in Irlanda (Unione Europea).</li>
+      <li><strong>GitHub Pages</strong> (GitHub Inc.): ospita i file del sito e può registrare il tuo indirizzo IP per sicurezza.</li>
+      <li><strong>Have I Been Pwned</strong>: verifica se una nuova password è apparsa in violazioni di dati. Riceve solo i primi 5 caratteri di un riassunto cifrato (hash SHA‑1), mai la password né la tua email, quindi non può sapere chi sei.</li>
     </ul>
-    <p>Entrambi agiscono come responsabili del trattamento. Eventuali trasferimenti fuori dall'UE si basano sul Data Privacy Framework UE–USA o su clausole contrattuali standard.</p>
-    <h2>6. Per quanto tempo li conserviamo</h2>
-    <p>Finché hai l'account. Se chiedi di cancellarlo, eliminiamo account e dati entro 30 giorni.</p>
-    <h2>7. I tuoi diritti</h2>
-    <p>Puoi chiedere accesso, rettifica, cancellazione, limitazione od opposizione, e la portabilità dei dati, scrivendo a <a href="mailto:alessandrosg88@gmail.com">alessandrosg88@gmail.com</a>. Puoi anche presentare un reclamo all'autorità per la protezione dei dati del tuo paese.</p>
-    <h2>8. Cookie e archiviazione locale</h2>
-    <p>Usiamo solo archiviazione tecnica necessaria al funzionamento della pagina:</p>
+    <p>Supabase e GitHub agiscono come responsabili del trattamento con contratto ai sensi dell'art. 28 del GDPR. Eventuali trasferimenti fuori dall'UE si basano sul Data Privacy Framework UE–USA o su clausole contrattuali standard.</p>
+    <h2>6. Come proteggiamo i tuoi dati</h2>
     <ul>
-      <li>La sessione di accesso (Supabase, nell'archiviazione locale del browser).</li>
-      <li>Una copia locale dei tuoi dati per caricare la pagina più velocemente.</li>
-      <li>Le tue preferenze, come la lingua. L'avviso sui cookie viene mostrato a ogni visita e non si salva se l'hai accettato.</li>
+      <li>Tutte le connessioni sono cifrate (HTTPS).</li>
+      <li>Ogni persona può vedere e modificare solo i propri dati: lo garantisce il database stesso (Row Level Security).</li>
+      <li>La pagina può collegarsi solo ai servizi indicati qui (Content Security Policy).</li>
+      <li>Le nuove password devono avere almeno 8 caratteri; ne verifichiamo la robustezza e se sono apparse in violazioni.</li>
+      <li>Dopo diversi tentativi di accesso falliti bisogna attendere prima di riprovare.</li>
+      <li>Hai a disposizione il blocco automatico per inattività, l'opzione per nascondere gli importi e l'uscita da tutti i dispositivi.</li>
     </ul>
-    <p>Non usiamo cookie di analisi, pubblicità o di terze parti, quindi non serve il tuo consenso (art. 5.3 della Direttiva ePrivacy). Puoi cancellare questi dati dal browser in qualsiasi momento; così facendo verrai disconnesso.</p>
-    <h2>9. Risorse esterne</h2>
-    <p>I caratteri e le librerie sono serviti da questo stesso sito. Nulla viene caricato da Google o da altri server di terze parti, tranne la connessione a Supabase per salvare i tuoi dati. Quando crei un account o cambi la password, verifichiamo se quella password è apparsa in violazioni pubbliche tramite il servizio Have I Been Pwned: vengono inviati solo i primi 5 caratteri di un riassunto cifrato (hash SHA‑1), mai la password né la tua email. Gli avvisi di pagamento sono notifiche del browser e non escono dal tuo dispositivo.</p>
-    <h2>10. Modifiche</h2>
-    <p>Se modifichiamo questa informativa, aggiorneremo la data qui sopra.</p>
+    <p>Nessuna misura è infallibile. Se si verificasse una violazione che riguarda i tuoi dati, la comunicheremo all'autorità e, quando previsto, a te, come richiede il GDPR (artt. 33 e 34).</p>
+    <h2>7. Per quanto tempo li conserviamo</h2>
+    <p>Finché hai l'account. Se chiedi di cancellarlo, eliminiamo account e tutti i dati entro 30 giorni. La copia dei tuoi dati salvata nel browser si cancella quando esci.</p>
+    <h2>8. I tuoi diritti</h2>
+    <p>Puoi chiedere accesso, rettifica, cancellazione, limitazione od opposizione, e la portabilità dei dati, scrivendo a <a href="mailto:alessandrosg88@gmail.com">alessandrosg88@gmail.com</a>. Molti puoi esercitarli direttamente: correggere o cancellare qualsiasi dato dall'app e scaricare una copia completa con «Scarica i miei dati» (JSON) in «Sicurezza e privacy» o esportando movimenti e budget in CSV. Puoi anche presentare un reclamo all'autorità per la protezione dei dati del tuo paese.</p>
+    <h2>9. Età minima</h2>
+    <p>Per creare un account devi avere almeno 16 anni.</p>
+    <h2>10. Cookie e archiviazione locale</h2>
+    <p>Non usiamo cookie di analisi, pubblicità o di terze parti. Salviamo nel browser solo ciò che è strettamente necessario per far funzionare la pagina come chiedi:</p>
+    <ul>
+      <li>La sessione di accesso (Supabase).</li>
+      <li>Una copia dei tuoi dati per caricare la pagina velocemente e usarla offline. Si cancella quando esci.</li>
+      <li>Le tue preferenze: lingua, modalità chiara o scura, sezioni chiuse, importi nascosti, blocco automatico e mesi del fondo di emergenza.</li>
+      <li>Dati di sicurezza: il numero di tentativi di accesso falliti e l'ora dell'ultima attività (per il blocco automatico).</li>
+      <li>Il fatto che hai accettato l'avviso sui cookie, per non mostrartelo a ogni visita.</li>
+      <li>Se installi l'app, una copia dei file del sito (non dei tuoi dati) per aprirla offline.</li>
+    </ul>
+    <p>Poiché tutto è necessario per il servizio che chiedi, non serve il tuo consenso (art. 5.3 della Direttiva ePrivacy; in Germania, § 25.2 TDDDG). Puoi cancellare questi dati dal browser in qualsiasi momento; così facendo verrai disconnesso.</p>
+    <h2>11. Avvisi di pagamento</h2>
+    <p>Li ricevi solo se dai il permesso al browser. Vengono generati sul tuo dispositivo in base al giorno di addebito che scegli e non vengono inviati a nessun server.</p>
+    <h2>12. Modifiche</h2>
+    <p>Se modifichiamo questa informativa, aggiorneremo la data qui sopra e, se il cambiamento è importante, ti avviseremo nell'app.</p>
     <p>Consulta anche i <a href="terminos.html">termini d'uso e le note legali</a>.</p>
   </article>
 
   <article lang="en" data-lang="en" hidden>
     <h1>Privacy &amp; cookie policy</h1>
-    <p class="muted">Last updated: 29 September 2026</p>
+    <p class="muted">Last updated: 5 October 2026</p>
     <h2>1. Controller</h2>
     <p>Alessandro Saglimbeni · <a href="mailto:alessandrosg88@gmail.com">alessandrosg88@gmail.com</a></p>
     <h2>2. What data we process</h2>
     <ul>
-      <li>Your email address and password (the password is stored encrypted; we can never see it).</li>
-      <li>The personal financial data you enter in the app, linked to your account (salary, budget, expenses, savings, investments, categories and notes).</li>
-      <li>Essential technical data, such as your IP address, logged by our providers for security.</li>
+      <li><strong>Your account:</strong> email address, password (stored as an encrypted hash; we can never see it) and the date of your last sign-in.</li>
+      <li><strong>Your budget, stored in the cloud and linked to your account:</strong> income and other income; fixed and variable expenses (name, amount and emoji); savings and savings goals; the expenses you log (date, amount, category and optional note); a monthly summary for the history and charts; the charge day of your fixed expenses and the months chosen for the emergency fund.</li>
+      <li><strong>Bank statements (CSV):</strong> the file is read only inside your browser and is never uploaded. Only the transactions you choose to import are saved (date, description, amount and category).</li>
+      <li><strong>Essential technical data</strong>, such as your IP address, logged by our providers for security.</li>
     </ul>
+    <p>We don't ask for bank or card details or sensitive data (Art. 9 GDPR). Please don't type account numbers, card numbers or passwords into names or notes.</p>
     <h2>3. Why we use it</h2>
-    <p>Only to create and maintain your account, store your data so you can see it from any device, and send you necessary emails (account confirmation or password reset). No advertising, no profiling, and we never sell or share your data.</p>
+    <p>Only to create and maintain your account, store your data so you can see it from any device, keep the service secure, and send you necessary emails (account confirmation or password change). No advertising, no profiling, and we never sell or share your data.</p>
+    <p>Tips, the 50/30/20 rule, charts and the emergency fund are calculated in your own browser from your data. They are information for you only and are not used for automated decisions about you (Art. 22 GDPR).</p>
     <h2>4. Legal basis</h2>
-    <p>Providing the service you request when you create an account (Art. 6(1)(b) GDPR).</p>
+    <ul>
+      <li>Providing the service you request when you create an account (Art. 6(1)(b) GDPR).</li>
+      <li>Our legitimate interest in keeping the service secure: technical logs, sign-in attempt limits and breached-password checks (Art. 6(1)(f) GDPR).</li>
+      <li>Your consent to payment reminders, given when your browser asks permission to show notifications (Art. 6(1)(a) GDPR). You can withdraw it at any time in your browser settings.</li>
+    </ul>
     <h2>5. Providers</h2>
     <ul>
-      <li><strong>Supabase</strong>: database and sign-in. Data is stored on servers in the European Union (Ireland).</li>
-      <li><strong>GitHub (GitHub Pages)</strong>: hosts the web pages and may log your IP address for security.</li>
+      <li><strong>Supabase</strong> (Supabase Inc.): database and sign-in. Your data is stored on Amazon Web Services servers in Ireland (European Union).</li>
+      <li><strong>GitHub Pages</strong> (GitHub Inc.): hosts the site's files and may log your IP address for security.</li>
+      <li><strong>Have I Been Pwned</strong>: checks whether a new password has appeared in data breaches. It only receives the first 5 characters of a SHA‑1 hash, never your password or email, so it cannot tell who you are.</li>
     </ul>
-    <p>Both act as data processors. Any transfer outside the EU relies on the EU–US Data Privacy Framework or standard contractual clauses.</p>
-    <h2>6. How long we keep it</h2>
-    <p>As long as you have an account. If you ask us to delete it, we remove your account and data within 30 days.</p>
-    <h2>7. Your rights</h2>
-    <p>You can request access, rectification, erasure, restriction or objection, and data portability by writing to <a href="mailto:alessandrosg88@gmail.com">alessandrosg88@gmail.com</a>. You can also lodge a complaint with the data protection authority in your country.</p>
-    <h2>8. Cookies and local storage</h2>
-    <p>We only use technical storage that the page needs to work:</p>
+    <p>Supabase and GitHub act as data processors under a contract in line with Art. 28 GDPR. Any transfer outside the EU relies on the EU–US Data Privacy Framework or standard contractual clauses.</p>
+    <h2>6. How we protect your data</h2>
     <ul>
-      <li>Your sign-in session (Supabase, in the browser's local storage).</li>
-      <li>A local copy of your data so the page loads quickly.</li>
-      <li>Your preferences, such as language. The cookie notice is shown on every visit and whether you accepted it is not stored.</li>
+      <li>All connections are encrypted (HTTPS).</li>
+      <li>Each person can only see and change their own data; the database itself enforces this (Row Level Security).</li>
+      <li>The page can only connect to the services listed here (Content Security Policy).</li>
+      <li>New passwords must have at least 8 characters; we check their strength and whether they appear in breaches.</li>
+      <li>After several failed sign-in attempts you have to wait before trying again.</li>
+      <li>You can use auto-lock after inactivity, hide amounts, and sign out on all your devices.</li>
     </ul>
-    <p>We don't use analytics, advertising or third-party cookies, so your consent isn't required (Art. 5(3) ePrivacy Directive). You can clear this data from your browser at any time; doing so will sign you out.</p>
-    <h2>9. External resources</h2>
-    <p>Fonts and libraries are served from this same site. Nothing is loaded from Google or other third-party servers, except the connection to Supabase to save your data. When you create an account or change your password, we check whether it has appeared in public breaches using Have I Been Pwned: only the first 5 characters of a SHA‑1 hash are sent, never your password or email. Payment reminders are browser notifications and never leave your device.</p>
-    <h2>10. Changes</h2>
-    <p>If we change this policy, we'll update the date above.</p>
+    <p>No measure is infallible. If a security breach affected your data, we would notify the authority and, where required, you, as the GDPR requires (Arts. 33 and 34).</p>
+    <h2>7. How long we keep it</h2>
+    <p>As long as you have an account. If you ask us to delete it, we remove your account and all your data within 30 days. The copy of your data stored in your browser is deleted when you sign out.</p>
+    <h2>8. Your rights</h2>
+    <p>You can request access, rectification, erasure, restriction or objection, and data portability by writing to <a href="mailto:alessandrosg88@gmail.com">alessandrosg88@gmail.com</a>. You can exercise many of them yourself: correct or delete any data in the app, and take a full copy with «Download my data» (JSON) under «Security &amp; privacy» or by exporting your transactions and budget as CSV. You can also lodge a complaint with the data protection authority in your country.</p>
+    <h2>9. Minimum age</h2>
+    <p>You must be at least 16 years old to create an account.</p>
+    <h2>10. Cookies and local storage</h2>
+    <p>We don't use analytics, advertising or third-party cookies. We only store in your browser what is strictly necessary for the page to work as you ask:</p>
+    <ul>
+      <li>Your sign-in session (Supabase).</li>
+      <li>A copy of your data so the page loads quickly and works offline. It is deleted when you sign out.</li>
+      <li>Your preferences: language, light or dark mode, collapsed sections, hidden amounts, auto-lock and emergency-fund months.</li>
+      <li>Security data: the number of failed sign-in attempts and the time of your last activity (for auto-lock).</li>
+      <li>That you accepted the cookie notice, so it isn't shown on every visit.</li>
+      <li>If you install the app, a copy of the site's files (not your data) so it can open offline.</li>
+    </ul>
+    <p>Because all of this is necessary for the service you request, your consent isn't required (Art. 5(3) ePrivacy Directive; in Germany, § 25(2) TDDDG). You can clear this data from your browser at any time; doing so will sign you out.</p>
+    <h2>11. Payment reminders</h2>
+    <p>You only get them if you allow notifications in your browser. They are created on your own device from the charge day you choose and are never sent to any server.</p>
+    <h2>12. Changes</h2>
+    <p>If we change this policy, we'll update the date above and, if the change is significant, let you know in the app.</p>
     <p>See also the <a href="terminos.html">terms of use and legal notice</a>.</p>
   </article>
 </main>
