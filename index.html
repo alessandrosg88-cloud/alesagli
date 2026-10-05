@@ -4,6 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mi presupuesto</title>
+<!-- Seguridad: limita desde dónde se pueden cargar scripts, estilos y conexiones -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://nhhskvauwdudhojjvodi.supabase.co wss://nhhskvauwdudhojjvodi.supabase.co https://api.pwnedpasswords.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Organiza tus ingresos, apunta tus gastos y mira al instante cuánto te queda cada mes.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#19243a">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Presupuesto">
+<script>try{var th=localStorage.getItem('alesagli-theme');if(!th)th=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=th;}catch(e){}</script>
 <script src="supabase.min.js"></script>
 <style>
 :root { --ink:#19243a; --muted:#6d7890; --line:#e4e9f1; --blue:#3567ee; --green:#17a876; --soft:#f5f7fb; --danger:#cf4f5b; }
@@ -134,6 +145,170 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .linkBtn { display:block; width:auto; background:none !important; box-shadow:none !important; border:0; color:var(--blue) !important; padding:8px 0 0; margin:6px auto 0; font-size:.88rem; font-weight:600; cursor:pointer; }
 .linkBtn:hover { text-decoration:underline; }
 @media (max-width:760px){ .authWrap { grid-template-columns:1fr; gap:28px; padding:32px 0; min-height:auto; } }
+
+/* ===== Nuevas funciones ===== */
+:root { --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948; --other:#a3abbb; --card:#fff; --input:#f8faff; --warn:#a3762c; }
+.ghost { color:var(--muted); background:var(--soft); }
+.ghost:hover { color:var(--blue); }
+.muted { color:var(--muted); }
+.neg { color:var(--danger) !important; }
+.pos { color:var(--green) !important; }
+/* ingresos extra */
+.incomeExtra { display:grid; gap:8px; margin-top:10px; }
+.incRow { display:grid; grid-template-columns:1fr 130px 30px; gap:8px; }
+.incRow input { min-width:0; width:100%; border:1px solid #ffffff33; background:#ffffff14; color:#fff; border-radius:9px; padding:8px 10px; font:inherit; font-weight:650; outline:none; }
+.incRow input::placeholder { color:#aab6cf; }
+.incRow .amount { text-align:right; }
+.incRow .remove { color:#cdd8ee; width:30px; height:34px; }
+.incRow .remove:hover { background:#ffffff1a; }
+.linkLight { margin-top:10px; background:transparent; color:#cdd8ee; padding:4px 0; font-size:.86rem; text-decoration:underline; }
+.incomeTotal { display:block; color:#cdd8ee; font-size:.85rem; font-weight:600; margin-top:4px; }
+/* barra de gasto real en cada fila */
+.rowSpent { grid-column:1 / -1; display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:.82rem; color:var(--muted); padding:0 4px 2px; }
+.rowSpent .mini { flex:1 1 120px; height:6px; background:#e9edf5; border-radius:99px; overflow:hidden; min-width:80px; }
+.rowSpent .mini i { display:block; height:100%; background:var(--green); border-radius:99px; }
+.rowSpent .mini i.over { background:var(--danger); }
+.rowSpent b { color:var(--ink); }
+.chip { border-radius:99px; padding:4px 10px; font-size:.8rem; font-weight:700; }
+.chip.ok { background:#e5f8f0; color:var(--green); }
+.chipBtn { background:#eef3ff; color:var(--blue); border-radius:99px; padding:4px 10px; font-size:.8rem; }
+/* tarjeta de consejos */
+.tips { display:grid; gap:10px; margin-top:16px; }
+.tip { display:flex; gap:10px; align-items:flex-start; padding:12px 14px; background:var(--soft); border-radius:12px; font-size:.92rem; }
+.tip .ic { flex:none; }
+.rule { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.rule .metric strong { font-size:1.25rem; }
+.rule .target { font-size:.8rem; color:var(--muted); font-weight:600; }
+.rule .mbar { position:relative; height:8px; background:#e2e8f2; border-radius:99px; margin-top:8px; overflow:visible; }
+.rule .mbar i { display:block; height:100%; border-radius:99px; background:var(--blue); max-width:100%; }
+.rule .mbar u { position:absolute; top:-3px; width:2px; height:14px; background:var(--ink); border-radius:2px; }
+@media (max-width:620px){ .rule { grid-template-columns:1fr; } }
+/* movimientos */
+.monthNav { display:flex; align-items:center; gap:6px; }
+.monthNav button { width:34px; height:34px; padding:0; background:var(--soft); color:var(--ink); }
+.monthNav strong { min-width:150px; text-align:center; }
+.moveSummary { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+@media (max-width:620px){ .moveSummary { grid-template-columns:1fr 1fr; } #movesCard .card-top { flex-wrap:wrap; } #movesCard .monthNav { flex-basis:100%; justify-content:space-between; } .monthNav strong { min-width:110px; } }
+.txDay { margin:14px 0 6px; font-size:.8rem; font-weight:800; color:var(--muted); letter-spacing:.02em; }
+.tx { display:grid; grid-template-columns:34px 1fr auto 30px; gap:10px; align-items:center; padding:8px 6px; border-bottom:1px solid var(--line); }
+.tx .em { width:34px; height:34px; display:grid; place-items:center; background:var(--soft); border-radius:10px; }
+.tx .nm { font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tx .nt { font-size:.8rem; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tx .am { font-weight:800; }
+.txActions { display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+.empty { color:var(--muted); text-align:center; padding:18px 8px; font-size:.92rem; }
+.localNote { font-size:.82rem; color:var(--warn); background:#fdf3e2; border-radius:10px; padding:8px 12px; margin:0 0 14px; }
+/* gráficos */
+.charts { display:grid; grid-template-columns:1fr 1.3fr; gap:22px; }
+@media (max-width:760px){ .charts { grid-template-columns:1fr; } }
+.chartBox h3 { margin:0 0 4px; font-size:1rem; }
+.chartBox .cap { margin:0 0 12px; font-size:.82rem; color:var(--muted); }
+.donutWrap { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+.donutWrap svg { width:180px; height:180px; flex:none; }
+.legend { list-style:none; margin:0; padding:0; display:grid; gap:6px; flex:1; min-width:160px; font-size:.86rem; }
+.legend li { display:grid; grid-template-columns:12px 1fr auto; gap:8px; align-items:center; }
+.legend .sw { width:12px; height:12px; border-radius:3px; }
+.legend .v { font-weight:700; color:var(--ink); }
+.legendRow { display:flex; gap:16px; font-size:.84rem; color:var(--muted); margin-bottom:6px; }
+.legendRow span::before { content:""; display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; background:var(--c); vertical-align:-1px; }
+.barsSvg { width:100%; height:auto; display:block; }
+.vizTip { position:fixed; z-index:10003; pointer-events:none; background:#19243a; color:#fff; font-size:.82rem; padding:6px 10px; border-radius:8px; box-shadow:0 8px 20px #0003; white-space:nowrap; }
+[data-tip] { cursor:default; }
+/* próximos pagos */
+.bill { display:grid; grid-template-columns:34px 1fr auto auto; gap:10px; align-items:center; padding:9px 6px; border-bottom:1px solid var(--line); }
+.bill select { font:inherit; font-size:.85rem; border:1px solid var(--line); background:var(--input); color:var(--ink); border-radius:8px; padding:5px 6px; }
+.bill .st { font-size:.82rem; font-weight:700; text-align:right; min-width:90px; }
+.bill .st.late { color:var(--danger); }
+.bill .st.soon { color:var(--warn); }
+@media (max-width:620px){ .bill { grid-template-columns:34px 1fr auto; } .bill .st { grid-column:2 / -1; text-align:left; } }
+/* objetivos */
+.goals { display:grid; gap:12px; margin-top:12px; }
+.goal { border:1px solid var(--line); border-radius:14px; padding:14px; }
+.goalHead { display:grid; grid-template-columns:42px 1fr 34px; gap:10px; align-items:center; }
+.goalHead input, .goalNums input { min-width:0; width:100%; padding:8px 10px; border:1px solid transparent; background:var(--input); border-radius:8px; color:var(--ink); font:inherit; font-weight:650; outline:none; }
+.goalHead input:focus, .goalNums input:focus { border-color:var(--blue); }
+.goalNums { display:grid; grid-template-columns:1fr 1fr auto; gap:10px; margin-top:10px; align-items:end; }
+.goalNums label { font-size:.78rem; color:var(--muted); font-weight:700; }
+.goal .goalBar { margin:12px 0 6px; }
+.goal .goalMsg { font-size:.86rem; }
+@media (max-width:620px){ .goalNums { grid-template-columns:1fr 1fr; } .goalNums button { grid-column:1 / -1; } }
+/* botón flotante y hojas */
+.fab { position:fixed; right:max(20px, calc((100vw - 1040px)/2 - 72px)); bottom:24px; z-index:60; width:60px; height:60px; border-radius:50%; background:var(--blue); color:#fff; font-size:2rem; line-height:1; padding:0; box-shadow:0 12px 28px #3567ee55; }
+@media (max-width:1180px){ .fab { right:20px; } }
+.cookieOpen .fab { bottom:150px; }
+.sheetBack { position:fixed; inset:0; z-index:10001; background:#0b1222a0; display:flex; align-items:flex-end; justify-content:center; }
+@media (min-width:700px){ .sheetBack { align-items:center; } }
+.sheet { width:min(520px,100%); max-height:92vh; overflow:auto; background:var(--card); color:var(--ink); border-radius:22px 22px 0 0; padding:22px 20px calc(20px + env(safe-area-inset-bottom)); box-shadow:0 -10px 40px #0003; }
+@media (min-width:700px){ .sheet { border-radius:22px; } }
+.sheet.wide { width:min(860px,100%); }
+.sheet h3 { margin:0 0 14px; font-size:1.2rem; }
+.qAmount { width:100%; font:inherit; font-size:2.2rem; font-weight:800; text-align:center; border:0; border-bottom:2px solid var(--line); background:transparent; color:var(--ink); padding:6px; outline:none; }
+.qAmount:focus { border-color:var(--blue); box-shadow:none; }
+.qCats { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+.qCats button { background:var(--soft); color:var(--ink); border:2px solid transparent; border-radius:99px; padding:7px 12px; font-weight:650; font-size:.9rem; }
+.qCats button.sel { border-color:var(--blue); background:#eef3ff; color:var(--blue); }
+.qRow { display:grid; grid-template-columns:1fr 1.4fr; gap:10px; }
+.qRow label { font-size:.82rem; font-weight:700; color:var(--muted); }
+.qRow input { display:block; width:100%; margin-top:5px; border:1px solid var(--line); background:var(--input); color:var(--ink); border-radius:10px; padding:10px; font:inherit; outline:none; }
+.qBtns { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+.qErr { color:var(--danger); font-size:.85rem; min-height:1.2em; margin:8px 0 0; }
+.impTable { max-height:52vh; overflow:auto; border:1px solid var(--line); border-radius:12px; }
+.impTable table { width:100%; border-collapse:collapse; font-size:.85rem; }
+.impTable th, .impTable td { padding:7px 8px; border-bottom:1px solid var(--line); text-align:left; }
+.impTable th { position:sticky; top:0; background:var(--soft); font-size:.78rem; color:var(--muted); }
+.impTable td.r { text-align:right; font-weight:700; white-space:nowrap; }
+.impTable td.d { white-space:nowrap; }
+.impTable td.c { max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.impTable select { font:inherit; font-size:.82rem; max-width:160px; border:1px solid var(--line); background:var(--input); color:var(--ink); border-radius:6px; padding:3px; }
+.impTable tr.dup td { opacity:.5; }
+/* seguridad */
+#newPassForm { display:grid; gap:10px; }
+#newPassForm label { font-weight:700; font-size:.88rem; color:var(--muted); display:block; }
+#newPassForm input { width:100%; margin-top:6px; border:1px solid var(--line); background:#f8faff; border-radius:10px; padding:11px 13px; font:inherit; outline:none; }
+.pwWrap { position:relative; }
+.pwWrap input { padding-right:44px !important; }
+.pwEye { position:absolute; right:6px; bottom:5px; width:34px; height:32px; padding:0; background:transparent; color:var(--muted); font-size:1rem; }
+.pwMeter { height:6px; background:var(--line); border-radius:99px; overflow:hidden; margin-top:8px; }
+.pwMeter i { display:block; height:100%; width:0; transition:width .2s, background .2s; }
+.pwHint { font-size:.8rem; color:var(--muted); margin-top:4px; min-height:1.1em; }
+.secList { display:grid; gap:10px; }
+.secItem { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 14px; background:var(--soft); border-radius:12px; }
+.secItem p { margin:2px 0 0; font-size:.82rem; color:var(--muted); }
+.secItem select { font:inherit; font-size:.88rem; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:8px; padding:6px 8px; }
+.switch { position:relative; width:46px; height:26px; flex:none; padding:0; border-radius:99px; background:#cfd6e3; }
+.switch::after { content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .15s; }
+.switch[aria-checked="true"] { background:var(--green); }
+.switch[aria-checked="true"]::after { left:23px; }
+body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #appWrap .amount, body.privacy #appWrap .am, body.privacy #appWrap .rowSpent b, body.privacy #appWrap .legend .v, body.privacy #appWrap .goalMsg b, body.privacy #appWrap .miniSum b, body.privacy #appWrap .incomeTotal, body.privacy #appWrap #salary, body.privacy #appWrap .field input, body.privacy #appWrap .goalNums input, body.privacy #appWrap .incRow .amount, body.privacy #appWrap svg text, body.privacy #appWrap .bill .amt { filter:blur(7px); }
+.lockScreen { position:fixed; inset:0; z-index:10002; background:var(--soft); display:grid; place-items:center; padding:20px; }
+.lockCard { background:var(--card); border:1px solid var(--line); border-radius:22px; padding:28px; width:min(380px,100%); text-align:center; box-shadow:0 12px 32px #2439651a; }
+.lockCard .big { font-size:2.4rem; }
+
+/* ===== Modo oscuro ===== */
+:root[data-theme="dark"] { color-scheme:dark; --ink:#e8edf7; --muted:#9aa6bd; --line:#2a3550; --soft:#1b2438; --card:#141c2e; --input:#1b2438; --blue:#5b8cff; --green:#2fc28e; --danger:#ff7b86; --warn:#e2ad55; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767; --other:#5d6880; }
+:root[data-theme="dark"] body { background:linear-gradient(135deg,#0b1220 0%,#0e1526 50%,#0b1a1a 100%); }
+:root[data-theme="dark"] .card, :root[data-theme="dark"] .authCard, :root[data-theme="dark"] .emojiPicker, :root[data-theme="dark"] .share-menu { background:var(--card) !important; border-color:#232d45 !important; box-shadow:none; }
+:root[data-theme="dark"] .income { background:#0f1a30; border:1px solid #26324d; box-shadow:none; }
+:root[data-theme="dark"] .income input { background:#1b2438; color:#fff; border-color:#33415f; }
+:root[data-theme="dark"] .row input, :root[data-theme="dark"] .field input, :root[data-theme="dark"] #authForm input, :root[data-theme="dark"] #newPassForm input, :root[data-theme="dark"] .emojiCustom input { background:var(--input); color:var(--ink); border-color:var(--line); }
+:root[data-theme="dark"] .row input:focus, :root[data-theme="dark"] .field input:focus { background:#212c44; }
+:root[data-theme="dark"] .emoji, :root[data-theme="dark"] .toggle { background:#1f2a40; }
+:root[data-theme="dark"] .emoji.empty, :root[data-theme="dark"] .addSmall, :root[data-theme="dark"] .chipBtn, :root[data-theme="dark"] .qCats button.sel, :root[data-theme="dark"] .authBadge { background:#1d2a4a; }
+:root[data-theme="dark"] .logout { background:#1f2a40; }
+:root[data-theme="dark"] .save { background:#12352a; }
+:root[data-theme="dark"] .save.saving, :root[data-theme="dark"] .localNote { background:#3a2e17; }
+:root[data-theme="dark"] .save.error { background:#3a1a20; }
+:root[data-theme="dark"] .chip.ok { background:#12352a; }
+:root[data-theme="dark"] .bar, :root[data-theme="dark"] .goalBar, :root[data-theme="dark"] .rowSpent .mini, :root[data-theme="dark"] .rule .mbar { background:#26314a; }
+:root[data-theme="dark"] .goalBox { background:linear-gradient(135deg,#10302a,#15213a); }
+:root[data-theme="dark"] .lang-btn { background:var(--card) !important; color:var(--ink) !important; border-color:var(--line) !important; }
+:root[data-theme="dark"] .remove:hover { background:#3a1a20; }
+:root[data-theme="dark"] .move:hover, :root[data-theme="dark"] .emojiGrid button:hover, :root[data-theme="dark"] .emojiGrid button.selected, :root[data-theme="dark"] .emoji:hover { background:#1d2a4a; }
+:root[data-theme="dark"] .vizTip { background:#e8edf7; color:#0b1220; }
+:root[data-theme="dark"] .switch { background:#3a4560; }
+:root[data-theme="dark"] .rule .mbar u { background:#e8edf7; }
+:root[data-theme="dark"] #cookie-banner { background:#e8edf7 !important; color:#0b1220 !important; }
+:root[data-theme="dark"] #cookie-banner a { color:#0b1220 !important; }
 </style>
 </head>
 <body>
@@ -160,16 +335,22 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
       <label>Correo electrónico
         <input type="email" id="authEmail" required autocomplete="email" placeholder="tucorreo@ejemplo.com">
       </label>
-      <label id="passwordLabel">Contraseña
-        <input type="password" id="authPassword" required autocomplete="current-password" minlength="6" placeholder="Mínimo 6 caracteres">
-      </label>
+      <div id="passwordLabel">
+        <label class="pwWrap">Contraseña
+          <input type="password" id="authPassword" required autocomplete="current-password" minlength="6" maxlength="128" placeholder="Mínimo 6 caracteres">
+          <button type="button" class="pwEye" data-for="authPassword" title="Mostrar contraseña" aria-label="Mostrar contraseña">👁</button>
+        </label>
+        <div id="pwStrength" hidden><div class="pwMeter"><i id="pwBar"></i></div><div class="pwHint" id="pwHint"></div></div>
+      </div>
       <button type="submit" class="add" id="authSubmit">Iniciar sesión</button>
       <button type="button" class="linkBtn" id="forgotBtn">¿Olvidaste tu contraseña?</button>
     </form>
     <form id="newPassForm" hidden>
-      <label>Nueva contraseña
-        <input type="password" id="newPassword" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+      <label class="pwWrap">Nueva contraseña
+        <input type="password" id="newPassword" required minlength="8" maxlength="128" autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+        <button type="button" class="pwEye" data-for="newPassword" title="Mostrar contraseña" aria-label="Mostrar contraseña">👁</button>
       </label>
+      <div id="pwStrength2"><div class="pwMeter"><i id="pwBar2"></i></div><div class="pwHint" id="pwHint2"></div></div>
       <button class="add" id="newPassSubmit">Guardar nueva contraseña</button>
     </form>
     <p class="authMsg" id="authMsg"></p>
@@ -188,8 +369,15 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 </div>
 </header>
 <section class="income">
-<div><label for="salary">Ingresos</label><input id="salary" type="text" placeholder="Ej. 1800,50" inputmode="decimal" aria-label="Ingresos"></div>
-<div class="remaining" id="remainingBox"><small>Te queda después de gastos</small><strong id="remaining">0,00 €</strong></div>
+<div><label for="salary">Ingresos</label><input id="salary" type="text" placeholder="Ej. 1800,50" inputmode="decimal" aria-label="Ingresos">
+<div class="incomeExtra" id="incomeExtra"></div>
+<button type="button" class="linkLight" id="addIncome">+ Añadir otro ingreso</button></div>
+<div class="remaining" id="remainingBox"><small>Te queda después de gastos</small><strong id="remaining">0,00 €</strong><span class="incomeTotal" id="incomeTotal" hidden></span></div>
+</section>
+<section class="card" id="tipsCard">
+<div class="card-top"><h2><button type="button" class="toggle" data-key="consejos" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>💡 Tu salud financiera</h2></div>
+<div class="rule" id="rule"></div>
+<div class="tips" id="tips"></div>
 </section>
 <section class="card">
 <div class="card-top"><h2><button type="button" class="toggle" data-key="gastos" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>Tus gastos mensuales</h2><div class="miniSum"><span>📌 Fijos<b id="msF">0,00 €</b></span><span>🔄 Variables<b id="msV">0,00 €</b></span><span>Total<b id="msT">0,00 €</b></span></div></div>
@@ -208,7 +396,36 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 <div class="summary"><div class="metric"><span>Total de gastos</span><strong id="total">0,00 €</strong></div><div class="metric"><span>Porcentaje de los ingresos</span><strong id="percentage">0 %</strong></div></div>
 <div class="bar" aria-label="Porcentaje de los ingresos destinado a gastos"><i id="bar"></i></div>
 <p class="hint">Escribe el nombre y el importe de todos tus gastos: comida, renta, transporte, ocio, deudas o cualquier otro.</p>
-<button class="reset" id="reset">Restablecer presupuesto</button>
+<button class="reset" id="reset">Restablecer presupuesto</button> · <button class="reset" id="exportBudget">Exportar presupuesto (CSV)</button>
+</section>
+<section class="card" id="movesCard">
+<div class="card-top"><h2><button type="button" class="toggle" data-key="movimientos" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>🧾 Gastos reales del mes</h2>
+<div class="monthNav"><button type="button" id="prevMonth" title="Mes anterior" aria-label="Mes anterior">‹</button><strong id="monthLabel"></strong><button type="button" id="nextMonth" title="Mes siguiente" aria-label="Mes siguiente">›</button></div></div>
+<p class="localNote" id="localNote" hidden></p>
+<div class="moveSummary">
+  <div class="metric"><span>Presupuestado</span><strong id="mvPlan">—</strong></div>
+  <div class="metric"><span>Gastado de verdad</span><strong id="mvSpent">0,00 €</strong></div>
+  <div class="metric"><span>Diferencia</span><strong id="mvDiff">—</strong></div>
+</div>
+<div id="txList"></div>
+<div class="txActions">
+  <button type="button" class="add" id="addTx">+ Apuntar gasto</button>
+  <button type="button" class="ghost" id="importCsv">⬆ Importar extracto (CSV)</button>
+  <button type="button" class="ghost" id="exportCsv">⬇ Exportar movimientos (CSV)</button>
+</div>
+<input type="file" id="impFile" accept=".csv,.txt,text/csv,text/plain" hidden>
+</section>
+<section class="card" id="chartsCard">
+<div class="card-top"><h2><button type="button" class="toggle" data-key="graficos" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>📊 Gráficos</h2></div>
+<div class="charts">
+  <div class="chartBox"><h3>¿En qué se va tu dinero?</h3><p class="cap" id="donutCap"></p><div class="donutWrap" id="donut"></div></div>
+  <div class="chartBox"><h3>Evolución de los últimos 6 meses</h3><div class="legendRow"><span style="--c:var(--s1)">Presupuestado</span><span style="--c:var(--s2)">Gastado de verdad</span></div><div id="bars"></div></div>
+</div>
+</section>
+<section class="card" id="billsCard">
+<div class="card-top"><h2><button type="button" class="toggle" data-key="pagos" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>📅 Próximos pagos</h2><button type="button" class="ghost" id="notifyBtn" hidden>🔔 Activar avisos</button></div>
+<p class="groupHint" id="billsInfo"></p>
+<div id="bills"></div>
 </section>
 <section class="card" id="savingsCard">
 <div class="card-top"><h2><button type="button" class="toggle" data-key="ahorro" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button><button type="button" class="emoji titleEmoji" id="savingsEmoji" title="Cambiar emoji" aria-label="Cambiar emoji">🐷<span class="plus">+</span></button>Tu ahorro</h2></div>
@@ -232,8 +449,60 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
   </div>
 </div>
 <p class="hint">Si dejas vacío «Cuánto ahorras al mes», se usa lo que te queda después de gastos.</p>
+<div class="proj">
+  <h3>🎯 Tus objetivos</h3>
+  <p class="groupHint">Crea un objetivo para cada meta: vacaciones, fondo de emergencia, coche…</p>
+  <div class="goals" id="goals"></div>
+  <button type="button" class="addSmall" id="addGoal">+ Añadir objetivo</button>
+</div>
 </section>
+<section class="card collapsed" id="secCard">
+<div class="card-top"><h2><button type="button" class="toggle" data-key="seguridad" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>🔒 Seguridad y privacidad</h2></div>
+<div class="secList">
+  <div class="secItem"><div><b>Ocultar importes</b><p>Difumina las cantidades para que nadie las vea por encima de tu hombro.</p></div><button type="button" class="switch" id="privacySwitch" role="switch" aria-checked="false" aria-label="Ocultar importes"></button></div>
+  <div class="secItem"><div><b>Bloqueo automático</b><p>Si no usas la app durante un tiempo, se bloquea y tendrás que poner tu contraseña.</p></div>
+    <select id="lockSelect" aria-label="Bloqueo automático"><option value="0">Nunca</option><option value="5">5 minutos</option><option value="15">15 minutos</option><option value="30">30 minutos</option><option value="60">1 hora</option></select></div>
+  <div class="secItem"><div><b>Último acceso</b><p id="lastLogin">—</p></div></div>
+  <div class="secItem"><div><b>Cambiar contraseña</b><p>Te enviaremos un enlace a tu correo para elegir una nueva.</p></div><button type="button" class="ghost" id="changePass">Enviar enlace</button></div>
+  <div class="secItem"><div><b>Cerrar sesión en todos los dispositivos</b><p>Útil si has entrado desde un ordenador que no es tuyo o has perdido el móvil.</p></div><button type="button" class="ghost" id="logoutAll">Cerrar en todos</button></div>
+  <div class="secItem"><div><b>Descargar mis datos</b><p>Copia completa de tus datos en formato JSON.</p></div><button type="button" class="ghost" id="exportJson">Descargar</button></div>
+</div>
+</section>
+<button type="button" class="fab" id="fab" title="Apuntar un gasto" aria-label="Apuntar un gasto">+</button>
 </main>
+
+<div class="sheetBack" id="sheetBack" hidden>
+  <form class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h3 id="sheetTitle">Apuntar un gasto</h3>
+    <input class="qAmount" id="qAmount" inputmode="decimal" placeholder="0,00 €" aria-label="Importe" autocomplete="off">
+    <div class="qCats" id="qCats"></div>
+    <div class="qRow"><label>Fecha<input type="date" id="qDate" required></label><label>Nota<input id="qNote" maxlength="120" placeholder="Opcional" autocomplete="off"></label></div>
+    <p class="qErr" id="qErr"></p>
+    <div class="qBtns"><button type="button" class="ghost" id="qCancel">Cancelar</button><button type="submit" class="add">Guardar</button></div>
+  </form>
+</div>
+
+<div class="sheetBack" id="impBack" hidden>
+  <div class="sheet wide" role="dialog" aria-modal="true" aria-labelledby="impTitle">
+    <h3 id="impTitle">Importar movimientos del banco</h3>
+    <p class="groupHint" id="impInfo"></p>
+    <div class="impTable" id="impTable"></div>
+    <div class="qBtns"><button type="button" class="ghost" id="impCancel">Cancelar</button><button type="button" class="add" id="impOk">Importar</button></div>
+  </div>
+</div>
+
+<div class="lockScreen" id="lockScreen" hidden>
+  <form class="lockCard" id="lockForm">
+    <div class="big">🔒</div>
+    <h2>App bloqueada</h2>
+    <p class="sub" id="lockEmail"></p>
+    <label class="pwWrap" style="display:block;text-align:left;margin-top:16px"><input type="password" id="lockPass" autocomplete="current-password" placeholder="Tu contraseña" aria-label="Contraseña" style="width:100%;border:1px solid var(--line);background:var(--input);color:var(--ink);border-radius:10px;padding:11px 13px;font:inherit;outline:none"><button type="button" class="pwEye" data-for="lockPass" title="Mostrar contraseña" aria-label="Mostrar contraseña">👁</button></label>
+    <p class="qErr" id="lockErr"></p>
+    <button type="submit" class="add" style="width:100%">Desbloquear</button>
+    <button type="button" class="linkBtn" id="lockLogout">Cerrar sesión</button>
+  </form>
+</div>
+<div class="vizTip" id="vizTip" hidden></div>
 
 <div class="emojiPicker" id="emojiPicker" hidden role="dialog" aria-label="Elegir emoji">
 <h3>Elige un emoji</h3>
@@ -309,6 +578,8 @@ $('#newPassForm').onsubmit = async (e) => {
   authMsg.className = 'authMsg';
   authMsg.textContent = 'Guardando…';
   try {
+    const weak = await passwordProblem($('#newPassword').value);
+    if (weak) throw new Error(weak);
     const { error } = await sb.auth.updateUser({ password: $('#newPassword').value });
     if (error) throw error;
     authMsg.textContent = 'Contraseña actualizada. Entrando…';
@@ -336,10 +607,15 @@ authForm.onsubmit = async (e) => {
       authMsg.textContent = 'Si hay una cuenta con ese correo, te hemos enviado un enlace para cambiar la contraseña. Revisa tu bandeja de entrada y la carpeta de spam.';
       authMsg.className = 'authMsg ok';
     } else if (mode === 'login') {
+      const wait = loginWait();
+      if (wait > 0) throw new Error('__wait__' + wait);
       const { error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      if (error) { loginFailed(); throw error; }
+      loginOk();
       // onAuthStateChange handles the rest
     } else {
+      const weak = await passwordProblem(password);
+      if (weak) throw new Error(weak);
       const { data, error } = await sb.auth.signUp({ email, password });
       if (error) throw error;
       if (!data.session) {
@@ -357,6 +633,7 @@ authForm.onsubmit = async (e) => {
 
 function translateAuthError(msg){
   if (!msg) return 'Ha ocurrido un error. Inténtalo de nuevo.';
+  if (/^__wait__/.test(msg)) return tWait(Number(msg.slice(8)));
   if (/invalid login credentials/i.test(msg)) return 'Correo o contraseña incorrectos.';
   if (/already registered|already exists/i.test(msg)) return 'Ya existe una cuenta con ese correo. Prueba a iniciar sesión.';
   if (/password.*(least|characters)/i.test(msg)) return 'La contraseña debe tener al menos 6 caracteres.';
@@ -391,9 +668,11 @@ sb.auth.onAuthStateChange((_event, session) => {
       loadedForUserId = currentUser.id;
       loadUserData();
       loadSavings();
+      if (typeof loadExtra === 'function') loadExtra();
     }
   } else {
     loadedForUserId = null;
+    if (typeof onSignedOut === 'function') onSignedOut();
     appWrap.hidden = true;
     authWrap.hidden = false;
   }
@@ -408,8 +687,21 @@ async function loadUserData(){
   const uid = currentUser.id;
   expenseTypes = Object.assign({}, (currentUser.user_metadata || {}).expense_types);
 
-  let { data: budget } = await sb.from('budgets').select('*').eq('user_id', uid).maybeSingle();
-  let { data: rows } = await sb.from('expenses').select('*').eq('user_id', uid).order('created_at', { ascending: true });
+  window.budgetLoaded = false;
+  let budget = null, rows = null, loadErr = null;
+  try {
+    const r1 = await sb.from('budgets').select('*').eq('user_id', uid).maybeSingle();
+    const r2 = await sb.from('expenses').select('*').eq('user_id', uid).order('created_at', { ascending: true });
+    budget = r1.data; rows = r2.data; loadErr = r1.error || r2.error;
+  } catch (err) { loadErr = err; }
+  if (loadErr) {
+    // Sin conexión o error: nunca crear datos nuevos; usar la última copia de este dispositivo.
+    let c = null;
+    try { c = JSON.parse(localStorage.getItem('alesagli-cache-' + uid) || 'null'); } catch (e) {}
+    if (c) { salary = c.salary || 0; expenses = c.expenses || []; expenseTypes = Object.assign({}, c.types || expenseTypes); render(); }
+    setStatus('Sin conexión', 'error');
+    return;
+  }
 
   if (!budget && (!rows || rows.length === 0)) {
     // First time this user logs in: create a starter budget for them.
@@ -427,8 +719,13 @@ async function loadUserData(){
 
   salary = budget.salary || 0;
   expenses = (rows || []).map(r => ({ id: r.id, emoji: r.emoji || '', name: r.name || '', amount: r.amount || 0 }));
+  window.budgetLoaded = true;
   render();
   setStatus('✓ Guardado en la nube', 'ok');
+}
+function cacheBudget(){
+  if (!currentUser || !window.budgetLoaded) return;
+  try { localStorage.setItem('alesagli-cache-' + currentUser.id, JSON.stringify({ salary, expenses, types: expenseTypes })); } catch (e) {}
 }
 
 function setStatus(text, kind){
@@ -450,6 +747,7 @@ function render(){
     const t = typeOf(e);
     const row = document.createElement('div');
     row.className = 'row';
+    row.dataset.id = e.id;
     row.innerHTML = `<button type="button" class="emoji${e.emoji ? '' : ' empty'}" title="Cambiar emoji" aria-label="Cambiar emoji">${e.emoji ? escapeHtml(e.emoji) : '+'}${e.emoji ? '<span class="plus">+</span>' : ''}</button><input class="name" value="${escapeHtml(e.name)}" aria-label="Nombre del gasto"><input class="amount" type="text" value="${toInput(e.amount)}" placeholder="0,00" inputmode="decimal" aria-label="Importe del gasto"><button type="button" class="move" title="${t === 'f' ? 'Pasar a gastos variables' : 'Pasar a gastos fijos'}" aria-label="${t === 'f' ? 'Pasar a gastos variables' : 'Pasar a gastos fijos'}">⇅</button><button class="remove" title="Eliminar gasto" aria-label="Eliminar gasto">×</button>`;
     row.querySelector('.name').oninput = ev => { expenses[i].name = ev.target.value; saveExpenseDebounced(expenses[i]); };
     row.querySelector('.amount').oninput = ev => { expenses[i].amount = ev.target.value; calculate(); saveExpenseDebounced(expenses[i]); };
@@ -462,7 +760,7 @@ row.querySelector('.emoji').onclick = ev => { ev.stopPropagation(); openEmojiPic
 }
 
 function calculate(){
-  const s = toNum(salary);
+  const s = toNum(salary) + (typeof extraIncomeTotal === 'function' ? extraIncomeTotal() : 0);
   const total = expenses.reduce((sum, e) => sum + toNum(e.amount), 0);
   const left = s - total, pct = s ? total / s * 100 : 0;
   $('#total').textContent = money(total);
@@ -477,6 +775,8 @@ function calculate(){
   $('#remainingBox').classList.toggle('negative', left < 0);
   $('#bar').style.width = `${Math.min(pct, 100)}%`;
   calcSavings(left);
+  cacheBudget();
+  if (typeof onBudgetChange === 'function') onBudgetChange();
 }
 
 // ---- Ahorro (se guarda en los datos de tu cuenta) ----
@@ -603,7 +903,7 @@ EMOJI_OPTIONS.forEach(em => { const b = document.createElement('button'); b.type
 function openEmojiPicker(btn, i){
 if (pickerIndex === i && !picker.hidden) { closeEmojiPicker(); return; }
 pickerIndex = i;
-const current = i === 'savings' ? savingsEmoji : expenses[i].emoji;
+const current = i === 'savings' ? savingsEmoji : (typeof i === 'string' && i.startsWith('goal:')) ? goalEmoji(i.slice(5)) : expenses[i].emoji;
 emojiGrid.querySelectorAll('button').forEach(b => b.classList.toggle('selected', b.textContent === current));
 emojiCustom.value = '';
 picker.hidden = false;
@@ -622,6 +922,12 @@ return Array.from(text)[0];
 }
 async function chooseEmoji(emoji){
 if (pickerIndex === null) return;
+if (typeof pickerIndex === 'string' && pickerIndex.startsWith('goal:')) {
+  const gid = pickerIndex.slice(5);
+  closeEmojiPicker();
+  setGoalEmoji(gid, emoji);
+  return;
+}
 if (pickerIndex === 'savings') {
   closeEmojiPicker();
   savingsEmoji = emoji;
@@ -651,7 +957,7 @@ window.addEventListener('resize', closeEmojiPicker);
 // ---- Plegar / desplegar secciones ----
 document.querySelectorAll('.toggle').forEach(btn => {
   const card = btn.closest('.card'), key = 'plegado-' + btn.dataset.key;
-  try { if (localStorage.getItem(key) === '1') card.classList.add('collapsed'); } catch (e) {}
+  try { const v = localStorage.getItem(key); if (v === '1') card.classList.add('collapsed'); else if (v === '0') card.classList.remove('collapsed'); } catch (e) {}
   btn.onclick = () => {
     const c = card.classList.toggle('collapsed');
     try { localStorage.setItem(key, c ? '1' : '0'); } catch (e) {}
@@ -683,6 +989,61 @@ document.querySelectorAll('.toggle').forEach(btn => {
   var NAMES = { es: "Español", it: "Italiano", en: "English" };
   // español: [italiano, inglés]
   var T = {
+    "💡 Tu salud financiera": ["💡 La tua salute finanziaria", "💡 Your financial health"],
+    "+ Añadir otro ingreso": ["+ Aggiungi un'altra entrata", "+ Add another income"],
+    "Exportar presupuesto (CSV)": ["Esporta budget (CSV)", "Export budget (CSV)"],
+    "🧾 Gastos reales del mes": ["🧾 Spese reali del mese", "🧾 This month's real spending"],
+    "Mes anterior": ["Mese precedente", "Previous month"],
+    "Mes siguiente": ["Mese successivo", "Next month"],
+    "Presupuestado": ["Previsto", "Budgeted"],
+    "Gastado de verdad": ["Speso davvero", "Actually spent"],
+    "Diferencia": ["Differenza", "Difference"],
+    "+ Apuntar gasto": ["+ Annota spesa", "+ Log expense"],
+    "⬆ Importar extracto (CSV)": ["⬆ Importa estratto conto (CSV)", "⬆ Import statement (CSV)"],
+    "⬇ Exportar movimientos (CSV)": ["⬇ Esporta movimenti (CSV)", "⬇ Export transactions (CSV)"],
+    "📊 Gráficos": ["📊 Grafici", "📊 Charts"],
+    "¿En qué se va tu dinero?": ["Dove vanno i tuoi soldi?", "Where does your money go?"],
+    "Evolución de los últimos 6 meses": ["Andamento degli ultimi 6 mesi", "Last 6 months"],
+    "📅 Próximos pagos": ["📅 Prossimi pagamenti", "📅 Upcoming payments"],
+    "🔔 Activar avisos": ["🔔 Attiva avvisi", "🔔 Turn on reminders"],
+    "🎯 Tus objetivos": ["🎯 I tuoi obiettivi", "🎯 Your goals"],
+    "Crea un objetivo para cada meta: vacaciones, fondo de emergencia, coche…": ["Crea un obiettivo per ogni meta: vacanze, fondo emergenze, auto…", "Create a goal for each target: holidays, emergency fund, car…"],
+    "+ Añadir objetivo": ["+ Aggiungi obiettivo", "+ Add goal"],
+    "🔒 Seguridad y privacidad": ["🔒 Sicurezza e privacy", "🔒 Security & privacy"],
+    "Ocultar importes": ["Nascondi importi", "Hide amounts"],
+    "Difumina las cantidades para que nadie las vea por encima de tu hombro.": ["Sfoca gli importi così nessuno li vede da sopra la tua spalla.", "Blurs amounts so nobody can read them over your shoulder."],
+    "Bloqueo automático": ["Blocco automatico", "Auto-lock"],
+    "Si no usas la app durante un tiempo, se bloquea y tendrás que poner tu contraseña.": ["Se non usi l'app per un po', si blocca e dovrai inserire la password.", "If you don't use the app for a while, it locks and asks for your password."],
+    "Nunca": ["Mai", "Never"],
+    "5 minutos": ["5 minuti", "5 minutes"],
+    "15 minutos": ["15 minuti", "15 minutes"],
+    "30 minutos": ["30 minuti", "30 minutes"],
+    "1 hora": ["1 ora", "1 hour"],
+    "Último acceso": ["Ultimo accesso", "Last sign-in"],
+    "Cambiar contraseña": ["Cambia password", "Change password"],
+    "Te enviaremos un enlace a tu correo para elegir una nueva.": ["Ti invieremo un link via email per sceglierne una nuova.", "We'll email you a link to choose a new one."],
+    "Enviar enlace": ["Invia link", "Send link"],
+    "Cerrar sesión en todos los dispositivos": ["Esci da tutti i dispositivi", "Sign out on all devices"],
+    "Útil si has entrado desde un ordenador que no es tuyo o has perdido el móvil.": ["Utile se hai effettuato l'accesso da un computer non tuo o hai perso il telefono.", "Useful if you signed in on someone else's computer or lost your phone."],
+    "Cerrar en todos": ["Esci ovunque", "Sign out everywhere"],
+    "Descargar mis datos": ["Scarica i miei dati", "Download my data"],
+    "Copia completa de tus datos en formato JSON.": ["Copia completa dei tuoi dati in formato JSON.", "A full copy of your data in JSON format."],
+    "Descargar": ["Scarica", "Download"],
+    "Apuntar un gasto": ["Annota una spesa", "Log an expense"],
+    "Importe": ["Importo", "Amount"],
+    "Fecha": ["Data", "Date"],
+    "Nota": ["Nota", "Note"],
+    "Opcional": ["Facoltativa", "Optional"],
+    "Cancelar": ["Annulla", "Cancel"],
+    "Guardar": ["Salva", "Save"],
+    "Importar movimientos del banco": ["Importa movimenti dalla banca", "Import bank transactions"],
+    "Importar": ["Importa", "Import"],
+    "App bloqueada": ["App bloccata", "App locked"],
+    "Tu contraseña": ["La tua password", "Your password"],
+    "Desbloquear": ["Sblocca", "Unlock"],
+    "Mostrar contraseña": ["Mostra password", "Show password"],
+    "Mínimo 8 caracteres": ["Minimo 8 caratteri", "At least 8 characters"],
+    "Sin conexión": ["Offline", "Offline"],
     "💶 Tu dinero, bajo control": ["💶 I tuoi soldi, sotto controllo", "💶 Your money, under control"],
     "Mi presupuesto": ["Il mio budget", "My Budget"],
     "Organiza tu salario, apunta tus gastos y mira al instante cuánto te queda cada mes.": ["Organizza il tuo stipendio, annota le spese e guarda subito quanto ti resta ogni mese.", "Organise your salary, log your expenses and instantly see how much you have left each month."],
@@ -955,13 +1316,14 @@ document.querySelectorAll('.toggle').forEach(btn => {
   obs.observe(document.body, OPTS);
 })();
 </script>
+<script src="extra.js"></script>
 <!-- Aviso de cookies -->
 <div id="cookie-banner" style="position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;max-width:640px;margin:0 auto;background:#1f2937;color:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:14px/1.4 system-ui,sans-serif;display:none;gap:12px;align-items:center;flex-wrap:wrap">
   <span style="flex:1;min-width:200px">Este sitio usa cookies y almacenamiento local para mantener tu sesión y guardar tus datos. Al registrarte o iniciar sesión con tu email, aceptas su uso. <a href="privacidad.html" style="color:#fff;text-decoration:underline">Más información</a></span>
   <button id="cookie-accept" type="button" style="background:#fff;color:#1f2937;border:0;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer">Aceptar</button>
 </div>
 <script>
-(function(){var b=document.getElementById('cookie-banner');b.style.display='flex';document.getElementById('cookie-accept').onclick=function(){b.style.display='none';};})();
+(function(){var b=document.getElementById('cookie-banner'),ok=false;try{ok=localStorage.getItem('alesagli-cookies')==='1';}catch(e){}if(ok)return;b.style.display='flex';document.body.classList.add('cookieOpen');document.getElementById('cookie-accept').onclick=function(){b.style.display='none';document.body.classList.remove('cookieOpen');try{localStorage.setItem('alesagli-cookies','1');}catch(e){}};})();
 </script>
 </body>
 </html>
