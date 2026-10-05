@@ -262,6 +262,11 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .impTable select { font:inherit; font-size:.82rem; max-width:160px; border:1px solid var(--line); background:var(--input); color:var(--ink); border-radius:6px; padding:3px; }
 .impTable tr.dup td { opacity:.5; }
 /* fondo de 6 meses */
+.fundPick { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 16px; }
+.fundPickLbl { font-weight:700; font-size:.9rem; margin-right:4px; }
+.fundOpt { min-width:46px; background:var(--soft); color:var(--ink); border:2px solid transparent; border-radius:99px; padding:6px 12px; }
+.fundOpt[aria-pressed="true"] { border-color:var(--blue); background:#eef3ff; color:var(--blue); }
+:root[data-theme="dark"] .fundOpt[aria-pressed="true"] { background:#1d2a4a; }
 .fundTop { display:grid; grid-template-columns:1fr auto 1fr; gap:14px; align-items:center; }
 .fundX { font-size:1.4rem; font-weight:800; color:var(--muted); }
 .fundNeed { background:var(--ink); }
@@ -443,16 +448,20 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
 <div id="bills"></div>
 </section>
 <section class="card" id="fundCard">
-<div class="card-top"><h2><button type="button" class="toggle" data-key="fondo" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>🛟 Fondo para 6 meses de gastos fijos</h2><div class="miniSum"><span>Necesitas<b id="fundMini">0,00 €</b></span></div></div>
-<p class="groupHint">Lo que necesitas tener ahorrado para poder pagar tus gastos fijos durante 6 meses aunque te quedes sin ingresos.</p>
+<div class="card-top"><h2><button type="button" class="toggle" data-key="fondo" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>🛟 Fondo de emergencia para gastos fijos</h2><div class="miniSum"><span>Necesitas<b id="fundMini">0,00 €</b></span></div></div>
+<p class="groupHint">Lo que necesitas tener ahorrado para pagar tus gastos fijos durante los meses que elijas, aunque te quedes sin ingresos.</p>
+<div class="fundPick" role="group" aria-label="Meses del fondo">
+  <span class="fundPickLbl">¿Para cuántos meses?</span>
+  <button type="button" class="fundOpt" data-m="3">× 3</button><button type="button" class="fundOpt" data-m="6">× 6</button><button type="button" class="fundOpt" data-m="9">× 9</button><button type="button" class="fundOpt" data-m="12">× 12</button>
+</div>
 <div class="fundTop">
   <div class="metric"><span>Gastos fijos al mes</span><strong id="fundMonthly">0,00 €</strong></div>
-  <div class="fundX" aria-hidden="true">× 6</div>
-  <div class="metric fundNeed"><span>Necesitas para 6 meses</span><strong id="fundNeed">0,00 €</strong></div>
+  <div class="fundX" id="fundX" aria-hidden="true">× 6</div>
+  <div class="metric fundNeed"><span id="fundNeedLbl">Necesitas para 6 meses</span><strong id="fundNeed">0,00 €</strong></div>
 </div>
 <div class="goalBox">
   <div class="goalTop"><span>Cubierto con lo que tienes ahorrado</span><strong id="fundPct">0 %</strong></div>
-  <div class="goalBar" aria-label="Parte del fondo de 6 meses que ya tienes"><i id="fundBar"></i></div>
+  <div class="goalBar" aria-label="Parte del fondo que ya tienes"><i id="fundBar"></i></div>
   <p class="goalMsg" id="fundMsg"></p>
 </div>
 <div class="fundTable" id="fundTable"></div>
@@ -1019,6 +1028,14 @@ document.querySelectorAll('.toggle').forEach(btn => {
   var NAMES = { es: "Español", it: "Italiano", en: "English" };
   // español: [italiano, inglés]
   var T = {
+    "🛟 Fondo de emergencia para gastos fijos": ["🛟 Fondo di emergenza per le spese fisse", "🛟 Emergency fund for fixed expenses"],
+    "Lo que necesitas tener ahorrado para pagar tus gastos fijos durante los meses que elijas, aunque te quedes sin ingresos.": ["Quanto ti serve avere da parte per pagare le spese fisse per i mesi che scegli, anche se resti senza entrate.", "How much you need saved to cover your fixed expenses for the months you choose, even if your income stops."],
+    "¿Para cuántos meses?": ["Per quanti mesi?", "For how many months?"],
+    "Otro": ["Altro", "Other"],
+    "Ej. 18": ["Es. 18", "e.g. 18"],
+    "Otro número de meses": ["Altro numero di mesi", "Other number of months"],
+    "Meses del fondo": ["Mesi del fondo", "Fund months"],
+    "Parte del fondo que ya tienes": ["Parte del fondo che hai già", "Share of the fund you already have"],
     "🛟 Fondo para 6 meses de gastos fijos": ["🛟 Fondo per 6 mesi di spese fisse", "🛟 6-month fixed-expense fund"],
     "Necesitas": ["Ti servono", "You need"],
     "Lo que necesitas tener ahorrado para poder pagar tus gastos fijos durante 6 meses aunque te quedes sin ingresos.": ["Quanto ti serve avere da parte per pagare le spese fisse per 6 mesi anche se resti senza entrate.", "How much you need saved to cover your fixed expenses for 6 months even if your income stops."],
