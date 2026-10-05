@@ -22,7 +22,7 @@ const store = {
 const URL_ALL = 'https://open.er-api.com/v6/latest/EUR';
 const URL_VE = 'https://ve.dolarapi.com/v1/dolares';
 const FX_KEY = 'alesagli-fx', CUR_KEY = 'alesagli-moneda';
-const MAX_AGE = 2 * 24 * 60 * 60 * 1000; // las tasas se actualizan cada 2 días
+const MAX_AGE = 24 * 60 * 60 * 1000; // las tasas se actualizan cada día
 const VE_KEY = 'alesagli-venezuela';
 let veOn = store.get(VE_KEY) === '1'; // el bolívar BCV / paralelo solo si la persona lo activa
 
@@ -190,7 +190,7 @@ function renderCard(){
   const st = $('#fxStatus');
   if (st) {
     const when = fx && fx.t ? t3('Actualizado: ', 'Aggiornato: ', 'Updated: ') + fmtDate(fx.t) + ' · ' + t3('próxima actualización: ', 'prossimo aggiornamento: ', 'next update: ') + fmtDate(fx.t + MAX_AGE) : '';
-    st.innerHTML = `${esc(when)}${lastError ? ` · <span class="neg">${esc(lastError)}</span>` : ''} · ${esc(t3('Se actualizan solas cada 2 días. Fuentes: ExchangeRate-API y DolarApi (BCV / paralelo). Tasas orientativas.', 'Si aggiornano da soli ogni 2 giorni. Fonti: ExchangeRate-API e DolarApi (BCV / parallelo). Tassi indicativi.', 'Updated automatically every 2 days. Sources: ExchangeRate-API and DolarApi (BCV / parallel). Indicative rates.'))}`;
+    st.innerHTML = `${esc(when)}${lastError ? ` · <span class="neg">${esc(lastError)}</span>` : ''} · ${esc(t3('Se actualizan solas cada día. Fuentes: ExchangeRate-API y DolarApi (BCV / paralelo). Tasas orientativas.', 'Si aggiornano da soli ogni giorno. Fonti: ExchangeRate-API e DolarApi (BCV / parallelo). Tassi indicativi.', 'Updated automatically every day. Sources: ExchangeRate-API and DolarApi (BCV / parallel). Indicative rates.'))}`;
   }
   const rb = $('#fxRefresh'); if (rb) { rb.disabled = loading; rb.textContent = loading ? '…' : '↻ ' + t3('Actualizar', 'Aggiorna', 'Refresh'); }
   const lb = $('#fxShowLbl'); if (lb) lb.textContent = t3('Ver mi presupuesto en', 'Mostra il mio budget in', 'Show my budget in');
