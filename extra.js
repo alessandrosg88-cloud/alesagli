@@ -367,9 +367,27 @@ $('#addGoal').onclick = () => {
   const last = $('#goals').lastElementChild; if (last && last.querySelector('.gName')) last.querySelector('.gName').focus();
 };
 
-// ---------- fondo para 6 meses de gastos fijos ----------
-const FUND_MONTHS = 6;
+// ---------- fondo de emergencia: gastos fijos × los meses que elijas ----------
+function fundMonths(){
+  let m = X && X.fundMonths;
+  if (!m) { try { m = Number(localStorage.getItem('alesagli-fund-months')); } catch (e) {} }
+  m = Math.round(Number(m));
+  return [3, 6, 9, 12].includes(m) ? m : 6;
+}
+function setFundMonths(m){
+  m = Math.round(Number(m));
+  if (![3, 6, 9, 12].includes(m)) return;
+  try { localStorage.setItem('alesagli-fund-months', String(m)); } catch (e) {}
+  if (X && X.fundMonths !== m) { X.fundMonths = m; saveX(); }
+  renderFund();
+}
+document.querySelectorAll('.fundOpt').forEach(b => { b.onclick = () => setFundMonths(b.dataset.m); });
 function renderFund(){
+  const FUND_MONTHS = fundMonths();
+  document.querySelectorAll('.fundOpt').forEach(b => b.setAttribute('aria-pressed', Number(b.dataset.m) === FUND_MONTHS ? 'true' : 'false'));
+  const mWord = n => n === 1 ? t3('mes', 'mese', 'month') : t3('meses', 'mesi', 'months');
+  $('#fundX').textContent = '× ' + FUND_MONTHS;
+  $('#fundNeedLbl').textContent = t3(`Necesitas para ${FUND_MONTHS} ${mWord(FUND_MONTHS)}`, `Ti servono per ${FUND_MONTHS} ${mWord(FUND_MONTHS)}`, `Needed for ${FUND_MONTHS} ${mWord(FUND_MONTHS)}`);
   const fixed = expenses.filter(e => typeOf(e) === 'f' && toNum(e.amount) > 0);
   const monthly = fixed.reduce((s, e) => s + toNum(e.amount), 0), need = monthly * FUND_MONTHS;
   const have = Math.max(0, toNum(savings.now)), pct = need > 0 ? Math.min(have / need * 100, 100) : 0;
@@ -383,7 +401,7 @@ function renderFund(){
   else {
     const months = monthly > 0 ? have / monthly : 0;
     const cover = months >= 1 ? t3(` Con lo que tienes ahorrado cubres ${months.toFixed(1).replace('.', ',')} meses.`, ` Con quanto hai risparmiato copri ${months.toFixed(1).replace('.', ',')} mesi.`, ` Your savings cover ${months.toFixed(1)} months.`) : '';
-    if (have >= need) msg.innerHTML = esc(t3('¡Lo tienes cubierto! Tus ahorros pagan 6 meses de gastos fijos.', 'Sei coperto! I tuoi risparmi pagano 6 mesi di spese fisse.', 'You\'re covered! Your savings pay for 6 months of fixed expenses.')) + esc(cover);
+    if (have >= need) msg.innerHTML = esc(t3(`¡Lo tienes cubierto! Tus ahorros pagan ${FUND_MONTHS} ${mWord(FUND_MONTHS)} de gastos fijos.`, `Sei coperto! I tuoi risparmi pagano ${FUND_MONTHS} ${mWord(FUND_MONTHS)} di spese fisse.`, `You're covered! Your savings pay for ${FUND_MONTHS} ${mWord(FUND_MONTHS)} of fixed expenses.`)) + esc(cover);
     else {
       const missing = need - have, left = Math.max(0, planNow().inc - planNow().plan);
       const per = String(savings.monthly).trim() === '' ? left : toNum(savings.monthly);
@@ -394,7 +412,7 @@ function renderFund(){
   }
   const tb = $('#fundTable');
   if (!fixed.length) { tb.innerHTML = ''; return; }
-  tb.innerHTML = `<table><thead><tr><th>${esc(t3('Gasto fijo', 'Spesa fissa', 'Fixed expense'))}</th><th class="r">${esc(t3('Al mes', 'Al mese', 'Per month'))}</th><th class="r">${esc(t3('× 6 meses', '× 6 mesi', '× 6 months'))}</th></tr></thead><tbody>` +
+  tb.innerHTML = `<table><thead><tr><th>${esc(t3('Gasto fijo', 'Spesa fissa', 'Fixed expense'))}</th><th class="r">${esc(t3('Al mes', 'Al mese', 'Per month'))}</th><th class="r">${esc('× ' + FUND_MONTHS + ' ' + mWord(FUND_MONTHS))}</th></tr></thead><tbody>` +
     fixed.map(e => `<tr><td>${esc((e.emoji ? e.emoji + ' ' : '') + (e.name || ''))}</td><td class="r">${esc(money(e.amount))}</td><td class="r">${esc(money(toNum(e.amount) * FUND_MONTHS))}</td></tr>`).join('') +
     `</tbody><tfoot><tr><td>${esc(t3('Total', 'Totale', 'Total'))}</td><td class="r">${esc(money(monthly))}</td><td class="r">${esc(money(need))}</td></tr></tfoot></table>`;
 }
