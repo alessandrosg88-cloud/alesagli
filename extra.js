@@ -43,8 +43,10 @@ const LKEY = id => 'alesagli-x-' + id;
 function readLocalX(id){ try { return JSON.parse(localStorage.getItem(LKEY(id)) || 'null'); } catch (e) { return null; } }
 function writeLocalX(){ const id = uid(); if (!id || !X) return; try { localStorage.setItem(LKEY(id), JSON.stringify(X)); } catch (e) {} }
 
+let lastUid = null;
 window.loadExtra = async function(){
   const id = uid(); if (!id) return;
+  lastUid = id;
   X = null;
   let res = null, error = null;
   try { res = await sb.from('user_data').select('data').eq('user_id', id).maybeSingle(); error = res.error; } catch (e) { error = e; }
@@ -70,7 +72,12 @@ window.loadExtra = async function(){
   checkBillReminders();
   if (/[?&]accion=apuntar/.test(location.search)) { history.replaceState(null, '', location.pathname); setTimeout(openSheet, 600); }
 };
-window.onSignedOut = function(){ X = null; selMonth = curMonth(); stopLockTimer(); };
+window.onSignedOut = function(){
+  // Privacidad: al cerrar sesión se borra la copia local de los datos de esa cuenta en este dispositivo.
+  if (lastUid) ['alesagli-cache-', 'alesagli-x-', 'alesagli-notified-'].forEach(k => { try { localStorage.removeItem(k + lastUid); } catch (e) {} });
+  lastUid = null; X = null; selMonth = curMonth(); stopLockTimer();
+  renderIncomes(); renderGoals();
+};
 window.addEventListener('online', () => { if (currentUser && xMode === 'local') loadExtra(); });
 
 const pushX = debounce(async () => {
