@@ -1,0 +1,19 @@
+{
+  "name": "Mi presupuesto",
+  "short_name": "Presupuesto",
+  "description": "Organiza tus ingresos, apunta tus gastos y mira al instante cuánto te queda cada mes.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef3ff",
+  "theme_color": "#19243a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Apuntar un gasto", "short_name": "Apuntar", "url": "./?accion=apuntar" }
+  ]
+}
