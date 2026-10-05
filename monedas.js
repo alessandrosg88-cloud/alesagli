@@ -22,7 +22,9 @@ const store = {
 const URL_ALL = 'https://open.er-api.com/v6/latest/EUR';
 const URL_VE = 'https://ve.dolarapi.com/v1/dolares';
 const FX_KEY = 'alesagli-fx', CUR_KEY = 'alesagli-moneda';
-const MAX_AGE = 60 * 60 * 1000; // 1 hora
+const MAX_AGE = 2 * 24 * 60 * 60 * 1000; // las tasas se actualizan cada 2 días
+const VE_KEY = 'alesagli-venezuela';
+let veOn = store.get(VE_KEY) === '1'; // el bolívar BCV / paralelo solo si la persona lo activa
 
 // Monedas que se muestran en la tabla de tasas (las más usadas)
 const MAJOR = ['USD', 'VES_BCV', 'VES_PAR', 'GBP', 'CHF', 'JPY', 'CNY', 'CAD', 'AUD', 'BRL', 'MXN', 'COP', 'ARS', 'CLP', 'PEN', 'UYU', 'BOB', 'PYG', 'DOP', 'CRC', 'GTQ', 'HNL', 'NIO', 'CUP', 'RUB', 'INR', 'TRY', 'MAD'];
@@ -38,6 +40,7 @@ function rate(c){ // unidades de la moneda c por 1 €
   if (c === 'EUR') return 1;
   if (!fx || !fx.eur) return null;
   const usd = fx.eur.USD;
+  if (c.startsWith('VES_') && !veOn) return null;
   if (c === 'VES_BCV') return fx.bcv && usd ? fx.bcv * usd : (fx.eur.VES || null);
   if (c === 'VES_PAR') return fx.par && usd ? fx.par * usd : null;
   return fx.eur[c] || null;
@@ -69,7 +72,7 @@ async function loadRates(force){
   if (!force && fx && Date.now() - fx.t < MAX_AGE) return;
   loading = true; lastError = ''; renderCard();
   const next = Object.assign({}, fx || {});
-  const [all, ve] = await Promise.allSettled([getJSON(URL_ALL), getJSON(URL_VE)]);
+  const [all, ve] = await Promise.allSettled([getJSON(URL_ALL), veOn ? getJSON(URL_VE) : Promise.resolve(null)]);
   if (all.status === 'fulfilled' && all.value && all.value.rates) {
     next.eur = all.value.rates; next.eurDate = (all.value.time_last_update_unix || 0) * 1000;
   } else lastError = t3('No se pudieron actualizar las tasas mundiales.', 'Impossibile aggiornare i tassi mondiali.', 'Could not update world rates.');
@@ -77,7 +80,7 @@ async function loadRates(force){
     const o = ve.value.find(x => x.fuente === 'oficial'), p = ve.value.find(x => x.fuente === 'paralelo');
     if (o && o.promedio) { next.bcv = o.promedio; next.bcvDate = o.fechaActualizacion; }
     if (p && p.promedio) { next.par = p.promedio; next.parDate = p.fechaActualizacion; }
-  } else lastError = (lastError ? lastError + ' ' : '') + t3('No se pudo actualizar el bolívar.', 'Impossibile aggiornare il bolívar.', 'Could not update the bolívar.');
+  } else if (veOn) lastError = (lastError ? lastError + ' ' : '') + t3('No se pudo actualizar el bolívar.', 'Impossibile aggiornare il bolívar.', 'Could not update the bolívar.');
   if (next.eur) { next.t = Date.now(); fx = next; store.set(FX_KEY, JSON.stringify(fx)); }
   loading = false;
   fillSelects(); renderCard(); refreshBudget();
@@ -118,17 +121,20 @@ function renderNote(){
 
 // ---------- tarjeta ----------
 function allCodes(){
-  const codes = fx && fx.eur ? Object.keys(fx.eur).filter(c => c !== 'VES') : MAJOR.filter(c => !c.startsWith('VES'));
-  const top = ['EUR', 'USD', 'VES_BCV', 'VES_PAR'];
+  const codes = fx && fx.eur ? Object.keys(fx.eur).filter(c => !(veOn && c === 'VES')) : MAJOR.filter(c => !c.startsWith('VES'));
+  const top = veOn ? ['EUR', 'USD', 'VES_BCV', 'VES_PAR'] : ['EUR', 'USD'];
   const rest = codes.filter(c => !top.includes(c)).sort((a, b) => currencyName(a).localeCompare(currencyName(b), LANG()));
   return top.concat(rest);
 }
 function optionsHtml(sel){
   return allCodes().map(c => `<option value="${esc(c)}"${c === sel ? ' selected' : ''}>${esc((FLAG[c] ? FLAG[c] + ' ' : '') + iso(c) + ' · ' + currencyName(c))}</option>`).join('');
 }
-let convFrom = store.get('alesagli-fx-from') || 'EUR', convTo = store.get('alesagli-fx-to') || 'VES_BCV';
+let convFrom = store.get('alesagli-fx-from') || 'EUR', convTo = store.get('alesagli-fx-to') || (veOn ? 'VES_BCV' : 'USD');
+const okCode = c => !c.startsWith('VES_') || veOn;
 function fillSelects(){
   const s = $('#fxShow'), f = $('#fxFrom'), t = $('#fxTo');
+  if (!okCode(convFrom)) convFrom = 'EUR';
+  if (!okCode(convTo)) convTo = 'USD';
   if (s) s.innerHTML = optionsHtml(display);
   if (f) f.innerHTML = optionsHtml(convFrom);
   if (t) t.innerHTML = optionsHtml(convTo);
@@ -153,11 +159,13 @@ function renderCard(){
   const box = $('#fxBody'); if (!box) return;
   const mini = $('#fxMini');
   const usdEur = rate('USD');
-  if (mini) mini.innerHTML = fx && fx.bcv ? `<span>🇺🇸 $<b>${esc(fmt(fx.bcv, 'VES', 2))}</b></span>${fx.par ? `<span>${esc(t3('Paralelo', 'Parallelo', 'Parallel'))}<b>${esc(fmt(fx.par, 'VES', 2))}</b></span>` : ''}` : '';
+  if (mini) mini.innerHTML = veOn && fx && fx.bcv ? `<span>🇺🇸 $<b>${esc(fmt(fx.bcv, 'VES', 2))}</b></span>${fx.par ? `<span>${esc(t3('Paralelo', 'Parallelo', 'Parallel'))}<b>${esc(fmt(fx.par, 'VES', 2))}</b></span>` : ''}` : '';
 
   // Venezuela
+  const vw = $('#fxVeWrap'); if (vw) vw.hidden = !veOn;
+  const cb = $('#fxVeOn'); if (cb) cb.checked = veOn;
   const ve = $('#fxVe');
-  if (ve) {
+  if (ve && veOn) {
     if (fx && (fx.bcv || fx.par)) {
       const gap = fx.bcv && fx.par ? (fx.par / fx.bcv - 1) * 100 : null;
       ve.innerHTML = `
@@ -181,8 +189,8 @@ function renderCard(){
 
   const st = $('#fxStatus');
   if (st) {
-    const when = fx && fx.t ? t3('Actualizado: ', 'Aggiornato: ', 'Updated: ') + fmtDate(fx.t) : '';
-    st.innerHTML = `${esc(when)}${lastError ? ` · <span class="neg">${esc(lastError)}</span>` : ''} · ${esc(t3('Fuentes: ExchangeRate-API y DolarApi (BCV / paralelo). Tasas orientativas.', 'Fonti: ExchangeRate-API e DolarApi (BCV / parallelo). Tassi indicativi.', 'Sources: ExchangeRate-API and DolarApi (BCV / parallel). Indicative rates.'))}`;
+    const when = fx && fx.t ? t3('Actualizado: ', 'Aggiornato: ', 'Updated: ') + fmtDate(fx.t) + ' · ' + t3('próxima actualización: ', 'prossimo aggiornamento: ', 'next update: ') + fmtDate(fx.t + MAX_AGE) : '';
+    st.innerHTML = `${esc(when)}${lastError ? ` · <span class="neg">${esc(lastError)}</span>` : ''} · ${esc(t3('Se actualizan solas cada 2 días. Fuentes: ExchangeRate-API y DolarApi (BCV / paralelo). Tasas orientativas.', 'Si aggiornano da soli ogni 2 giorni. Fonti: ExchangeRate-API e DolarApi (BCV / parallelo). Tassi indicativi.', 'Updated automatically every 2 days. Sources: ExchangeRate-API and DolarApi (BCV / parallel). Indicative rates.'))}`;
   }
   const rb = $('#fxRefresh'); if (rb) { rb.disabled = loading; rb.textContent = loading ? '…' : '↻ ' + t3('Actualizar', 'Aggiorna', 'Refresh'); }
   const lb = $('#fxShowLbl'); if (lb) lb.textContent = t3('Ver mi presupuesto en', 'Mostra il mio budget in', 'Show my budget in');
@@ -198,11 +206,17 @@ function init(){
   $('#fxAmount').oninput = renderConv;
   $('#fxSwap').onclick = () => { [convFrom, convTo] = [convTo, convFrom]; store.set('alesagli-fx-from', convFrom); store.set('alesagli-fx-to', convTo); fillSelects(); renderConv(); };
   $('#fxRefresh').onclick = () => loadRates(true);
+  $('#fxVeOn').onchange = e => {
+    veOn = e.target.checked; store.set(VE_KEY, veOn ? '1' : '0');
+    if (!veOn && display.startsWith('VES_')) { display = 'EUR'; store.set(CUR_KEY, 'EUR'); }
+    if (veOn && fx && !fx.bcv) loadRates(true);
+    fillSelects(); renderCard(); refreshBudget();
+  };
   const lb = $('#langBtn'); if (lb) lb.addEventListener('click', () => setTimeout(() => { fillSelects(); renderCard(); refreshBudget(); }, 0));
   renderCard();
   if (display !== 'EUR') refreshBudget();
   loadRates(false);
-  setInterval(() => { if (document.visibilityState === 'visible') loadRates(false); }, 10 * 60 * 1000);
+  setInterval(() => { if (document.visibilityState === 'visible') loadRates(false); }, 60 * 60 * 1000);
   window.addEventListener('online', () => loadRates(true));
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
