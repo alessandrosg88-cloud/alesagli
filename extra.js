@@ -311,7 +311,7 @@ function renderCharts(){
   $('#bars').innerHTML = `<svg class="barsSvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t3('Presupuestado frente a gastado, últimos 6 meses', 'Previsto rispetto a speso, ultimi 6 mesi', 'Budgeted vs spent, last 6 months'))}">${g}</svg>`;
 }
 function niceStep(x){ const p = Math.pow(10, Math.floor(Math.log10(Math.max(x, 1)))); const f = x / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
-function compact(v){ return v >= 1000 ? (Math.round(v / 100) / 10).toString().replace('.', ',') + ' k€' : Math.round(v) + ' €'; }
+function compact(v){ if (typeof window.fxCompact === 'function') return window.fxCompact(v); return v >= 1000 ? (Math.round(v / 100) / 10).toString().replace('.', ',') + ' k€' : Math.round(v) + ' €'; }
 function barPath(x, y, w, h, r){ return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`; }
 // tooltip
 const tipEl = $('#vizTip');
