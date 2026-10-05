@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mi presupuesto</title>
 <!-- Seguridad: limita desde dónde se pueden cargar scripts, estilos y conexiones -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://nhhskvauwdudhojjvodi.supabase.co wss://nhhskvauwdudhojjvodi.supabase.co https://api.pwnedpasswords.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://nhhskvauwdudhojjvodi.supabase.co wss://nhhskvauwdudhojjvodi.supabase.co https://api.pwnedpasswords.com https://open.er-api.com https://ve.dolarapi.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="Organiza tus ingresos, apunta tus gastos y mira al instante cuánto te queda cada mes.">
 <link rel="manifest" href="manifest.webmanifest">
@@ -277,6 +277,28 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .fundNeed span { color:#cdd8ee; }
 .fundNeed strong { color:#fff; }
 :root[data-theme="dark"] .fundNeed { background:#0f1a30; border:1px solid #26324d; }
+.fxNote { margin-top:14px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; border-radius:14px; background:#eef3ff; color:var(--ink); font-size:.88rem; }
+.fxNote[hidden] { display:none; }
+.fxBack { background:var(--blue); color:#fff; border:0; border-radius:99px; padding:6px 12px; font-weight:700; font-size:.82rem; cursor:pointer; }
+:root[data-theme="dark"] .fxNote { background:#1d2a4a; }
+.fxShowRow { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.fxShowRow label { font-weight:700; font-size:.88rem; color:var(--muted); }
+.fxShowRow .addSmall { margin-top:0; margin-left:auto; }
+.fxSel { min-width:0; max-width:100%; padding:10px 12px; border:1px solid var(--line); background:var(--input, #f8faff); color:var(--ink); border-radius:10px; font:inherit; font-size:.95rem; font-weight:650; }
+.fxH { margin:22px 0 10px; font-size:1rem; }
+.fxVeOpt { display:flex; align-items:center; gap:8px; margin-top:16px; font-size:.9rem; font-weight:650; cursor:pointer; }
+.fxVeOpt input { width:18px; height:18px; accent-color:var(--blue); }
+.fxVe { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
+.fxVe .metric small { display:block; margin-top:4px; color:var(--muted); font-size:.78rem; }
+.fxConv { display:grid; grid-template-columns:minmax(90px, .7fr) 1fr auto 1fr; gap:8px; align-items:center; }
+.fxConv input { width:100%; padding:10px 12px; border:1px solid var(--line); background:var(--input, #f8faff); color:var(--ink); border-radius:10px; font:inherit; font-size:1.05rem; font-weight:750; outline:none; }
+.fxSwap { width:40px; height:40px; border-radius:50%; border:1px solid var(--line); background:var(--soft); color:var(--blue); font-size:1.1rem; cursor:pointer; }
+.fxResult { margin-top:12px; padding:14px 16px; background:var(--soft); border-radius:15px; }
+.fxResult strong { display:block; font-size:1.5rem; letter-spacing:-.03em; }
+.fxResult small { color:var(--muted); font-size:.8rem; }
+.fxTable { max-height:360px; overflow:auto; }
+.fxTable td:first-child { white-space:nowrap; }
+@media (max-width:640px) { .fxVe { grid-template-columns:1fr; } .fxConv { grid-template-columns:1fr auto 1fr; } .fxConv input { grid-column:1 / -1; } .fxShowRow .addSmall { margin-left:0; } .fxTable { font-size:.8rem; } .fxTable th:nth-child(4), .fxTable td:nth-child(4) { display:none; } }
 .fundTable { margin-top:16px; }
 .fundTable table { width:100%; border-collapse:collapse; font-size:.9rem; font-variant-numeric:tabular-nums; }
 .fundTable th, .fundTable td { padding:8px 6px; border-bottom:1px solid var(--line); text-align:left; }
@@ -398,6 +420,27 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
 <div class="incomeExtra" id="incomeExtra"></div>
 <button type="button" class="linkLight" id="addIncome">+ Añadir otro ingreso</button></div>
 <div class="remaining" id="remainingBox"><small>Te queda después de gastos</small><strong id="remaining">0,00 €</strong><span class="incomeTotal" id="incomeTotal" hidden></span></div>
+</section>
+<div class="fxNote" id="fxNote" hidden></div>
+<section class="card" id="fxCard">
+<div class="card-top"><h2><button type="button" class="toggle" data-key="monedas" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>💱 Cambio de monedas</h2><div class="miniSum" id="fxMini"></div></div>
+<div id="fxBody">
+<div class="fxShowRow"><label for="fxShow" id="fxShowLbl">Ver mi presupuesto en</label><select id="fxShow" class="fxSel"></select><button type="button" class="addSmall" id="fxRefresh">↻ Actualizar</button></div>
+<label class="fxVeOpt"><input type="checkbox" id="fxVeOn"> <span>🇻🇪 Vivo en Venezuela: mostrar el dólar oficial BCV y el paralelo</span></label>
+<div id="fxVeWrap" hidden><h3 class="fxH">🇻🇪 Venezuela</h3>
+<div class="fxVe" id="fxVe"></div></div>
+<h3 class="fxH">🔁 Conversor</h3>
+<div class="fxConv">
+  <input id="fxAmount" inputmode="decimal" placeholder="1" value="100" aria-label="Cantidad" autocomplete="off">
+  <select id="fxFrom" class="fxSel" aria-label="De"></select>
+  <button type="button" class="fxSwap" id="fxSwap" title="Intercambiar" aria-label="Intercambiar">⇄</button>
+  <select id="fxTo" class="fxSel" aria-label="A"></select>
+</div>
+<div class="fxResult" id="fxResult"></div>
+<h3 class="fxH">🌍 Monedas importantes</h3>
+<div class="fundTable fxTable" id="fxTable"></div>
+<p class="hint" id="fxStatus"></p>
+</div>
 </section>
 <section class="card" id="tipsCard">
 <div class="card-top"><h2><button type="button" class="toggle" data-key="consejos" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>💡 Tu salud financiera</h2></div>
@@ -577,7 +620,7 @@ let salary = 0;
 let expenses = []; // [{id, emoji, name, amount}]
 let saveStatusTimer = null;
 
-const money = n => new Intl.NumberFormat('es-ES', { style:'currency', currency:'EUR' }).format(n || 0);
+const money = n => (typeof window.fxMoney === 'function' ? window.fxMoney(n) : new Intl.NumberFormat('es-ES', { style:'currency', currency:'EUR' }).format(n || 0));
 function escapeHtml(s){ return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 // Acepta "12,50", "12.50", "1.200,50" o "1200 €"
 function toNum(v){
@@ -1383,6 +1426,7 @@ document.querySelectorAll('.toggle').forEach(btn => {
 })();
 </script>
 <script src="extra.js"></script>
+<script src="monedas.js"></script>
 <!-- Aviso de cookies -->
 <div id="cookie-banner" style="position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;max-width:640px;margin:0 auto;background:#1f2937;color:#fff;padding:14px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:14px/1.4 system-ui,sans-serif;display:none;gap:12px;align-items:center;flex-wrap:wrap">
   <span style="flex:1;min-width:200px">Este sitio usa cookies y almacenamiento local para mantener tu sesión y guardar tus datos. Al registrarte o iniciar sesión con tu email, aceptas su uso. <a href="privacidad.html" style="color:#fff;text-decoration:underline">Más información</a></span>
