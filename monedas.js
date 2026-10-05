@@ -162,6 +162,7 @@ function renderCard(){
   if (mini) mini.innerHTML = veOn && fx && fx.bcv ? `<span>🇺🇸 $<b>${esc(fmt(fx.bcv, 'VES', 2))}</b></span>${fx.par ? `<span>${esc(t3('Paralelo', 'Parallelo', 'Parallel'))}<b>${esc(fmt(fx.par, 'VES', 2))}</b></span>` : ''}` : '';
 
   // Venezuela
+  renderVeAsk();
   const vw = $('#fxVeWrap'); if (vw) vw.hidden = !veOn;
   const cb = $('#fxVeOn'); if (cb) cb.checked = veOn;
   const ve = $('#fxVe');
@@ -197,6 +198,31 @@ function renderCard(){
   renderConv(); renderNote();
 }
 
+// Pregunta: ¿vives en Venezuela? (solo la primera vez; luego se cambia con la casilla)
+function setVe(on){
+  veOn = on; store.set(VE_KEY, on ? '1' : '0');
+  if (!veOn && display.startsWith('VES_')) { display = 'EUR'; store.set(CUR_KEY, 'EUR'); }
+  if (veOn && fx && !fx.bcv) loadRates(true);
+  if (veOn && convTo === 'USD' && convFrom === 'EUR') { convTo = 'VES_BCV'; store.set('alesagli-fx-to', convTo); }
+  fillSelects(); renderCard(); refreshBudget();
+}
+function renderVeAsk(){
+  const opt = document.querySelector('.fxVeOpt'); if (!opt) return;
+  let ask = $('#fxVeAsk');
+  const asked = store.get(VE_KEY) !== null;
+  if (!ask) {
+    ask = document.createElement('div'); ask.id = 'fxVeAsk';
+    ask.style.cssText = 'margin-top:16px;padding:14px 16px;border-radius:15px;background:var(--soft);border:2px solid var(--blue);display:flex;flex-wrap:wrap;align-items:center;gap:10px';
+    opt.parentNode.insertBefore(ask, opt);
+  }
+  ask.hidden = asked; ask.style.display = asked ? 'none' : 'flex';
+  opt.style.display = asked ? '' : 'none';
+  if (asked) return;
+  const btn = 'border:0;border-radius:99px;padding:8px 18px;font-weight:700;cursor:pointer;font:inherit';
+  ask.innerHTML = `<span style="flex:1;min-width:200px;font-weight:650">🇻🇪 ${esc(t3('¿Vives en Venezuela? Si es así, te mostramos el dólar oficial BCV y el paralelo.', 'Vivi in Venezuela? Se sì, ti mostriamo il dollaro ufficiale BCV e quello parallelo.', 'Do you live in Venezuela? If so, we\'ll show the official BCV and parallel dollar.'))}</span><button type="button" data-ve="1" style="${btn};background:var(--blue);color:#fff">${esc(t3('Sí', 'Sì', 'Yes'))}</button><button type="button" data-ve="0" style="${btn};background:var(--line);color:var(--ink)">${esc(t3('No', 'No', 'No'))}</button>`;
+  ask.querySelectorAll('button').forEach(b => b.onclick = () => setVe(b.dataset.ve === '1'));
+}
+
 function init(){
   if (!$('#fxCard')) return;
   fillSelects();
@@ -206,12 +232,7 @@ function init(){
   $('#fxAmount').oninput = renderConv;
   $('#fxSwap').onclick = () => { [convFrom, convTo] = [convTo, convFrom]; store.set('alesagli-fx-from', convFrom); store.set('alesagli-fx-to', convTo); fillSelects(); renderConv(); };
   $('#fxRefresh').onclick = () => loadRates(true);
-  $('#fxVeOn').onchange = e => {
-    veOn = e.target.checked; store.set(VE_KEY, veOn ? '1' : '0');
-    if (!veOn && display.startsWith('VES_')) { display = 'EUR'; store.set(CUR_KEY, 'EUR'); }
-    if (veOn && fx && !fx.bcv) loadRates(true);
-    fillSelects(); renderCard(); refreshBudget();
-  };
+  $('#fxVeOn').onchange = e => setVe(e.target.checked);
   const lb = $('#langBtn'); if (lb) lb.addEventListener('click', () => setTimeout(() => { fillSelects(); renderCard(); refreshBudget(); }, 0));
   renderCard();
   if (display !== 'EUR') refreshBudget();
