@@ -126,6 +126,10 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 #authForm input { width:100%; margin-top:6px; border:1px solid var(--line); background:#f8faff; border-radius:10px; padding:11px 13px; font:inherit; outline:none; }
 #authForm input:focus { background:white; border-color:var(--blue); }
 #authSubmit { width:100%; padding:13px; font-size:1rem; }
+#authForm .ageCheck { display:flex; gap:10px; align-items:flex-start; font-weight:500; font-size:.86rem; color:var(--muted); line-height:1.4; }
+#authForm .ageCheck[hidden] { display:none; }
+#authForm .ageCheck input { width:18px; height:18px; margin:2px 0 0; flex:none; accent-color:var(--blue); }
+#authForm .ageCheck a { color:var(--blue); }
 .authMsg { min-height:20px; margin:14px 0 0; font-size:.88rem; color:var(--muted); }
 .authMsg.error { color:var(--danger); }
 .authMsg.ok { color:var(--green); }
@@ -362,6 +366,7 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
         </label>
         <div id="pwStrength" hidden><div class="pwMeter"><i id="pwBar"></i></div><div class="pwHint" id="pwHint"></div></div>
       </div>
+      <label class="ageCheck" id="ageLabel" hidden><input type="checkbox" id="ageOk"> <span>Tengo al menos 16 años y acepto los <a href="terminos.html" target="_blank" rel="noopener">términos de uso</a> y la <a href="privacidad.html" target="_blank" rel="noopener">política de privacidad</a>.</span></label>
       <button type="submit" class="add" id="authSubmit">Iniciar sesión</button>
       <button type="button" class="linkBtn" id="forgotBtn">¿Olvidaste tu contraseña?</button>
     </form>
@@ -598,6 +603,7 @@ function setAuthMode(next){
   $('#passwordLabel').hidden = (mode === 'recover');
   authPassword.required = (mode === 'login' || mode === 'signup');
   $('#forgotBtn').hidden = (mode === 'signup');
+  $('#ageLabel').hidden = (mode !== 'signup');
   $('#forgotBtn').textContent = mode === 'recover' ? '← Volver a iniciar sesión' : '¿Olvidaste tu contraseña?';
   authSubmit.textContent = mode === 'login' ? 'Iniciar sesión' : mode === 'signup' ? 'Crear cuenta' : 'Enviar enlace de recuperación';
   authPassword.autocomplete = mode === 'login' ? 'current-password' : 'new-password';
@@ -653,6 +659,7 @@ authForm.onsubmit = async (e) => {
       loginOk();
       // onAuthStateChange handles the rest
     } else {
+      if (!$('#ageOk').checked) throw new Error('Para crear una cuenta debes tener al menos 16 años y aceptar los términos y la política de privacidad.');
       const weak = await passwordProblem(password);
       if (weak) throw new Error(weak);
       const { data, error } = await sb.auth.signUp({ email, password });
@@ -1028,6 +1035,11 @@ document.querySelectorAll('.toggle').forEach(btn => {
   var NAMES = { es: "Español", it: "Italiano", en: "English" };
   // español: [italiano, inglés]
   var T = {
+    "Tengo al menos 16 años y acepto los": ["Ho almeno 16 anni e accetto i", "I am at least 16 years old and accept the"],
+    "términos de uso": ["termini d'uso", "terms of use"],
+    "y la": ["e l'", "and the"],
+    "política de privacidad": ["informativa sulla privacy", "privacy policy"],
+    "Para crear una cuenta debes tener al menos 16 años y aceptar los términos y la política de privacidad.": ["Per creare un account devi avere almeno 16 anni e accettare i termini e l'informativa sulla privacy.", "To create an account you must be at least 16 and accept the terms and the privacy policy."],
     "🛟 Fondo de emergencia para gastos fijos": ["🛟 Fondo di emergenza per le spese fisse", "🛟 Emergency fund for fixed expenses"],
     "Lo que necesitas tener ahorrado para pagar tus gastos fijos durante los meses que elijas, aunque te quedes sin ingresos.": ["Quanto ti serve avere da parte per pagare le spese fisse per i mesi che scegli, anche se resti senza entrate.", "How much you need saved to cover your fixed expenses for the months you choose, even if your income stops."],
     "¿Para cuántos meses?": ["Per quanti mesi?", "For how many months?"],
