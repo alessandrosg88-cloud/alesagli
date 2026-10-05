@@ -117,11 +117,13 @@ function snapshotHistory(){
 }
 
 window.onBudgetChange = function(){
+  renderFund();
   if (!X) return;
   snapshotHistory();
   refreshViews();
 };
 function refreshViews(){
+  renderFund();
   if (!X) return;
   const it = $('#incomeTotal');
   if (X.incomes.length) { it.hidden = false; it.textContent = t3('Ingresos totales: ', 'Entrate totali: ', 'Total income: ') + money(planNow().inc); } else it.hidden = true;
@@ -364,6 +366,38 @@ $('#addGoal').onclick = () => {
   saveX(); renderGoals();
   const last = $('#goals').lastElementChild; if (last && last.querySelector('.gName')) last.querySelector('.gName').focus();
 };
+
+// ---------- fondo para 6 meses de gastos fijos ----------
+const FUND_MONTHS = 6;
+function renderFund(){
+  const fixed = expenses.filter(e => typeOf(e) === 'f' && toNum(e.amount) > 0);
+  const monthly = fixed.reduce((s, e) => s + toNum(e.amount), 0), need = monthly * FUND_MONTHS;
+  const have = Math.max(0, toNum(savings.now)), pct = need > 0 ? Math.min(have / need * 100, 100) : 0;
+  $('#fundMonthly').textContent = money(monthly);
+  $('#fundNeed').textContent = money(need);
+  $('#fundMini').textContent = money(need);
+  $('#fundPct').textContent = Math.round(pct) + ' %';
+  $('#fundBar').style.width = pct + '%';
+  const msg = $('#fundMsg');
+  if (!(need > 0)) msg.textContent = t3('Añade tus gastos fijos para calcular cuánto necesitas.', 'Aggiungi le spese fisse per calcolare quanto ti serve.', 'Add your fixed expenses to work out how much you need.');
+  else {
+    const months = monthly > 0 ? have / monthly : 0;
+    const cover = months >= 1 ? t3(` Con lo que tienes ahorrado cubres ${months.toFixed(1).replace('.', ',')} meses.`, ` Con quanto hai risparmiato copri ${months.toFixed(1).replace('.', ',')} mesi.`, ` Your savings cover ${months.toFixed(1)} months.`) : '';
+    if (have >= need) msg.innerHTML = esc(t3('¡Lo tienes cubierto! Tus ahorros pagan 6 meses de gastos fijos.', 'Sei coperto! I tuoi risparmi pagano 6 mesi di spese fisse.', 'You\'re covered! Your savings pay for 6 months of fixed expenses.')) + esc(cover);
+    else {
+      const missing = need - have, left = Math.max(0, planNow().inc - planNow().plan);
+      const per = String(savings.monthly).trim() === '' ? left : toNum(savings.monthly);
+      let when = '';
+      if (per > 0) { const n = Math.ceil(missing / per); when = t3(` Ahorrando ${money(per)} al mes lo tendrás en ${n} ${n === 1 ? 'mes' : 'meses'}.`, ` Risparmiando ${money(per)} al mese lo avrai in ${n} ${n === 1 ? 'mese' : 'mesi'}.`, ` Saving ${money(per)} a month you'll have it in ${n} ${n === 1 ? 'month' : 'months'}.`); }
+      msg.innerHTML = `${esc(t3('Te faltan', 'Ti mancano', 'You still need'))} <b>${esc(money(missing))}</b>.${esc(cover)}${esc(when)}`;
+    }
+  }
+  const tb = $('#fundTable');
+  if (!fixed.length) { tb.innerHTML = ''; return; }
+  tb.innerHTML = `<table><thead><tr><th>${esc(t3('Gasto fijo', 'Spesa fissa', 'Fixed expense'))}</th><th class="r">${esc(t3('Al mes', 'Al mese', 'Per month'))}</th><th class="r">${esc(t3('× 6 meses', '× 6 mesi', '× 6 months'))}</th></tr></thead><tbody>` +
+    fixed.map(e => `<tr><td>${esc((e.emoji ? e.emoji + ' ' : '') + (e.name || ''))}</td><td class="r">${esc(money(e.amount))}</td><td class="r">${esc(money(toNum(e.amount) * FUND_MONTHS))}</td></tr>`).join('') +
+    `</tbody><tfoot><tr><td>${esc(t3('Total', 'Totale', 'Total'))}</td><td class="r">${esc(money(monthly))}</td><td class="r">${esc(money(need))}</td></tr></tfoot></table>`;
+}
 
 // ---------- 7 · próximos pagos y avisos ----------
 function billState(e, paidMap){
@@ -640,7 +674,7 @@ installBtn.onclick = async () => { if (!deferredInstall) return; deferredInstall
 window.addEventListener('appinstalled', () => { installBtn.hidden = true; });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 const langBtn = document.getElementById('langBtn');
-if (langBtn) langBtn.addEventListener('click', () => setTimeout(() => { themeLabel(); installBtn.textContent = '📲 ' + t3('Instalar app', 'Installa app', 'Install app'); if (X) { renderIncomes(); renderGoals(); refreshViews(); } }, 0));
+if (langBtn) langBtn.addEventListener('click', () => setTimeout(() => { themeLabel(); renderFund(); installBtn.textContent = '📲 ' + t3('Instalar app', 'Installa app', 'Install app'); if (X) { renderIncomes(); renderGoals(); refreshViews(); } }, 0));
 
 window.addEventListener('resize', debounce(() => { if (X) renderCharts(); }, 200));
 // ---------- teclado: Esc cierra hojas ----------
@@ -764,6 +798,7 @@ $('#changePass').onclick = async () => {
 };
 // Si la sesión ya estaba cargada antes de que este archivo terminara de cargar
 if (currentUser && !X) loadExtra();
+if (window.budgetLoaded) renderFund();
 
 $('#logoutAll').onclick = async () => {
   if (!confirm(t3('¿Cerrar sesión en todos tus dispositivos (incluido este)?', 'Uscire da tutti i dispositivi (incluso questo)?', 'Sign out on all your devices (including this one)?'))) return;
