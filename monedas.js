@@ -4,7 +4,6 @@
 //  bolívar venezolano oficial BCV y paralelo (ve.dolarapi.com).
 //  · Ver todo el presupuesto en otra moneda (los importes se
 //    siguen guardando y escribiendo en euros).
-//  · Conversor entre cualquier par de monedas.
 // ============================================================
 (function(){
 'use strict';
@@ -26,8 +25,6 @@ const MAX_AGE = 24 * 60 * 60 * 1000; // las tasas se actualizan cada día
 const VE_KEY = 'alesagli-venezuela-v2'; // v2: se vuelve a preguntar a todos los usuarios
 let veOn = store.get(VE_KEY) === '1'; // el bolívar BCV / paralelo solo si la persona lo activa
 
-// Monedas que se muestran en la tabla de tasas (las más usadas)
-const MAJOR = ['USD', 'VES_BCV', 'VES_PAR', 'GBP', 'CHF', 'JPY', 'CNY', 'CAD', 'AUD', 'BRL', 'MXN', 'COP', 'ARS', 'CLP', 'PEN', 'UYU', 'BOB', 'PYG', 'DOP', 'CRC', 'GTQ', 'HNL', 'NIO', 'CUP', 'RUB', 'INR', 'TRY', 'MAD'];
 const FLAG = { EUR:'🇪🇺', USD:'🇺🇸', VES_BCV:'🇻🇪', VES_PAR:'🇻🇪', GBP:'🇬🇧', CHF:'🇨🇭', JPY:'🇯🇵', CNY:'🇨🇳', CAD:'🇨🇦', AUD:'🇦🇺', BRL:'🇧🇷', MXN:'🇲🇽', COP:'🇨🇴', ARS:'🇦🇷', CLP:'🇨🇱', PEN:'🇵🇪', UYU:'🇺🇾', BOB:'🇧🇴', PYG:'🇵🇾', DOP:'🇩🇴', CRC:'🇨🇷', GTQ:'🇬🇹', HNL:'🇭🇳', NIO:'🇳🇮', CUP:'🇨🇺', RUB:'🇷🇺', INR:'🇮🇳', TRY:'🇹🇷', MAD:'🇲🇦' };
 
 let fx = null; // { t, eur:{CODE: unidades por 1 €}, bcv, par, bcvDate, parDate }
@@ -87,7 +84,7 @@ async function loadRates(force){
 }
 
 // ---------- ver el presupuesto en otra moneda ----------
-let display = store.get(CUR_KEY) || 'EUR';
+let display = store.get(CUR_KEY) === 'USD' ? 'USD' : 'EUR';
 const activeCur = () => (display !== 'EUR' && rate(display)) ? display : 'EUR';
 
 window.fxMoney = function(n){
@@ -120,41 +117,19 @@ function renderNote(){
 }
 
 // ---------- tarjeta ----------
-function allCodes(){
-  const codes = fx && fx.eur ? Object.keys(fx.eur).filter(c => !(veOn && c === 'VES')) : MAJOR.filter(c => !c.startsWith('VES'));
-  const top = veOn ? ['EUR', 'USD', 'VES_BCV', 'VES_PAR'] : ['EUR', 'USD'];
-  const rest = codes.filter(c => !top.includes(c)).sort((a, b) => currencyName(a).localeCompare(currencyName(b), LANG()));
-  return top.concat(rest);
-}
+function allCodes(){ return ['EUR', 'USD']; } // solo euros y dólares USA
 function optionsHtml(sel){
   return allCodes().map(c => `<option value="${esc(c)}"${c === sel ? ' selected' : ''}>${esc((FLAG[c] ? FLAG[c] + ' ' : '') + iso(c) + ' · ' + currencyName(c))}</option>`).join('');
 }
-let convFrom = store.get('alesagli-fx-from') || 'EUR', convTo = store.get('alesagli-fx-to') || (veOn ? 'VES_BCV' : 'USD');
-const okCode = c => !c.startsWith('VES_') || veOn;
 function fillSelects(){
-  const s = $('#fxShow'), f = $('#fxFrom'), t = $('#fxTo');
-  if (!okCode(convFrom)) convFrom = 'EUR';
-  if (!okCode(convTo)) convTo = 'USD';
+  const s = $('#fxShow');
   if (s) s.innerHTML = optionsHtml(display);
-  if (f) f.innerHTML = optionsHtml(convFrom);
-  if (t) t.innerHTML = optionsHtml(convTo);
 }
 function fmtDate(d){
   if (!d) return '';
   try { return new Intl.DateTimeFormat(LOC(), { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }).format(new Date(d)); } catch (e) { return ''; }
 }
 function fmtDay(d){ try { return new Intl.DateTimeFormat(LOC(), { day:'numeric', month:'short', timeZone:'America/Caracas' }).format(new Date(d)); } catch (e) { return ''; } }
-function toNumber(v){ v = String(v || '').replace(/\s/g, ''); if (v.includes(',')) v = v.replace(/\./g, '').replace(',', '.'); const n = parseFloat(v); return isFinite(n) ? n : 0; }
-
-function renderConv(){
-  const out = $('#fxResult'); if (!out) return;
-  const a = toNumber($('#fxAmount').value || '1');
-  const r = convert(a, convFrom, convTo);
-  if (r == null) { out.innerHTML = `<span class="muted">${esc(loading ? t3('Cargando tasas…', 'Caricamento tassi…', 'Loading rates…') : t3('Tasa no disponible', 'Tasso non disponibile', 'Rate not available'))}</span>`; return; }
-  const unit = convert(1, convFrom, convTo);
-  out.innerHTML = `<strong>${esc(fmt(r, convTo, 2))}</strong><small>1 ${esc(iso(convFrom))} = ${esc(fmt(unit, convTo))} · 1 ${esc(iso(convTo))} = ${esc(fmt(1 / unit, convFrom))}</small>`;
-}
-
 function renderCard(){
   const box = $('#fxBody'); if (!box) return;
   const mini = $('#fxMini');
@@ -176,18 +151,6 @@ function renderCard(){
     } else ve.innerHTML = `<p class="muted">${esc(loading ? t3('Cargando tasas…', 'Caricamento tassi…', 'Loading rates…') : t3('Sin datos del bolívar todavía.', 'Ancora nessun dato sul bolívar.', 'No bolívar data yet.'))}</p>`;
   }
 
-  // Tabla de monedas importantes
-  const tb = $('#fxTable');
-  if (tb) {
-    const rows = MAJOR.filter(c => rate(c)).map(c => {
-      const r = rate(c);
-      return `<tr><td>${esc((FLAG[c] || '') + ' ' + currencyName(c))} <span class="muted">${esc(iso(c))}</span></td><td class="r">${esc(fmt(r, c))}</td><td class="r">${c === 'USD' ? '—' : esc(fmt(r / usdEur, c))}</td><td class="r">${esc(fmt(1 / r, 'EUR'))}</td></tr>`;
-    }).join('');
-    tb.innerHTML = rows
-      ? `<table><thead><tr><th>${esc(t3('Moneda', 'Valuta', 'Currency'))}</th><th class="r">1 € =</th><th class="r">1 $ =</th><th class="r">${esc(t3('1 unidad =', '1 unità =', '1 unit ='))}</th></tr></thead><tbody>${rows}</tbody></table>`
-      : `<p class="muted">${esc(loading ? t3('Cargando tasas…', 'Caricamento tassi…', 'Loading rates…') : t3('No hay tasas guardadas. Comprueba tu conexión.', 'Nessun tasso salvato. Controlla la connessione.', 'No saved rates. Check your connection.'))}</p>`;
-  }
-
   const st = $('#fxStatus');
   if (st) {
     const when = fx && fx.t ? t3('Actualizado: ', 'Aggiornato: ', 'Updated: ') + fmtDate(fx.t) + ' · ' + t3('próxima actualización: ', 'prossimo aggiornamento: ', 'next update: ') + fmtDate(fx.t + MAX_AGE) : '';
@@ -195,7 +158,7 @@ function renderCard(){
   }
   const rb = $('#fxRefresh'); if (rb) { rb.disabled = loading; rb.textContent = loading ? '…' : '↻ ' + t3('Actualizar', 'Aggiorna', 'Refresh'); }
   const lb = $('#fxShowLbl'); if (lb) lb.textContent = t3('Ver mi presupuesto en', 'Mostra il mio budget in', 'Show my budget in');
-  renderConv(); renderNote();
+  renderNote();
 }
 
 // Pregunta: ¿vives en Venezuela? (solo la primera vez; luego se cambia con la casilla)
@@ -203,7 +166,6 @@ function setVe(on){
   veOn = on; store.set(VE_KEY, on ? '1' : '0');
   if (!veOn && display.startsWith('VES_')) { display = 'EUR'; store.set(CUR_KEY, 'EUR'); }
   if (veOn && fx && !fx.bcv) loadRates(true);
-  if (veOn && convTo === 'USD' && convFrom === 'EUR') { convTo = 'VES_BCV'; store.set('alesagli-fx-to', convTo); }
   fillSelects(); renderCard(); refreshBudget();
 }
 function renderVeAsk(){
@@ -227,10 +189,6 @@ function init(){
   if (!$('#fxCard')) return;
   fillSelects();
   $('#fxShow').onchange = e => setDisplay(e.target.value);
-  $('#fxFrom').onchange = e => { convFrom = e.target.value; store.set('alesagli-fx-from', convFrom); renderConv(); };
-  $('#fxTo').onchange = e => { convTo = e.target.value; store.set('alesagli-fx-to', convTo); renderConv(); };
-  $('#fxAmount').oninput = renderConv;
-  $('#fxSwap').onclick = () => { [convFrom, convTo] = [convTo, convFrom]; store.set('alesagli-fx-from', convFrom); store.set('alesagli-fx-to', convTo); fillSelects(); renderConv(); };
   $('#fxRefresh').onclick = () => loadRates(true);
   $('#fxVeOn').onchange = e => setVe(e.target.checked);
   const lb = $('#langBtn'); if (lb) lb.addEventListener('click', () => setTimeout(() => { fillSelects(); renderCard(); refreshBudget(); }, 0));
