@@ -571,7 +571,7 @@ function parseDate(s){
   return y + '-' + pad(mo) + '-' + pad(d);
 }
 function parseAmt(s){
-  s = String(s || '').replace(/[\s €]|EUR/gi, '').replace(/−/g, '-');
+  s = String(s || '').replace(/[\s €$]|EUR|USD/gi, '').replace(/−/g, '-');
   if (!/\d/.test(s) || /[a-z]/i.test(s)) return NaN;
   const neg = /^\(.*\)$/.test(s) || /-$/.test(s);
   s = s.replace(/[()]/g, '').replace(/-$/, '');
