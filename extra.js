@@ -31,7 +31,7 @@ let X = null;            // { v, u, tx:[], meta:{}, incomes:[], goals:[], histor
 let xMode = 'cloud';     // 'cloud' | 'local'
 let selMonth = curMonth();
 const uid = () => currentUser && currentUser.id;
-function blankX(){ return { v:1, u:0, tx:[], meta:{}, incomes:[], goals:[], history:{}, subIgnore:[] }; }
+function blankX(){ return { v:1, u:0, tx:[], meta:{}, incomes:[], goals:[], history:{}, subIgnore:[], debts:[], debtCfg:{}, worth:{} }; }
 function normX(d){
   const b = blankX();
   d = (d && typeof d === 'object') ? d : {};
@@ -68,7 +68,7 @@ window.loadExtra = async function(){
   }
   migrateOldGoal();
   writeLocalX();
-  renderIncomes(); renderGoals(); refreshViews();
+  renderIncomes(); renderGoals(); renderDebts(); refreshViews();
   checkBillReminders();
   if (/[?&]accion=apuntar/.test(location.search)) { history.replaceState(null, '', location.pathname); setTimeout(openSheet, 600); }
 };
@@ -76,7 +76,7 @@ window.onSignedOut = function(){
   // Privacidad: al cerrar sesión se borra la copia local de los datos de esa cuenta en este dispositivo.
   if (lastUid) ['alesagli-cache-', 'alesagli-x-', 'alesagli-notified-'].forEach(k => { try { localStorage.removeItem(k + lastUid); } catch (e) {} });
   lastUid = null; X = null; selMonth = curMonth(); stopLockTimer();
-  renderIncomes(); renderGoals();
+  renderIncomes(); renderGoals(); renderDebts();
 };
 window.addEventListener('online', () => { if (currentUser && xMode === 'local') loadExtra(); });
 
@@ -134,7 +134,7 @@ function refreshViews(){
   if (!X) return;
   const it = $('#incomeTotal');
   if (X.incomes.length) { it.hidden = false; it.textContent = t3('Ingresos totales: ', 'Entrate totali: ', 'Total income: ') + money(planNow().inc); } else it.hidden = true;
-  decorateRows(); renderMoves(); renderCharts(); renderBills(); renderSubs(); renderTips(); updateGoalsProgress();
+  decorateRows(); renderMoves(); renderCharts(); renderBills(); renderSubs(); renderTips(); snapshotWorth(); updateDebtPlan(); renderYear(); updateGoalsProgress();
 }
 
 // ---------- 1 · ingresos extra ----------
@@ -198,14 +198,20 @@ function renderMoves(){
   if (plan) { const diff = plan.plan - total; d.textContent = (diff < 0 ? '−' : '') + money(Math.abs(diff)); d.className = diff < 0 ? 'neg' : 'pos'; }
   else { d.textContent = '—'; d.className = ''; }
   const list = $('#txList'); list.innerHTML = '';
-  const txs = txIn(selMonth).slice().sort((a, b) => b.d.localeCompare(a.d));
+  fillTxCats(); renderTags();
+  const F = txFilter(txIn(selMonth));
+  const txs = F.txs.slice().sort((a, b) => b.d.localeCompare(a.d));
+  const found = $('#txFound');
+  found.hidden = !F.active;
+  if (F.active) found.innerHTML = esc(t3(`${txs.length} ${txs.length === 1 ? 'gasto' : 'gastos'}${F.all ? ' en todos los meses' : ''} · total `, `${txs.length} ${txs.length === 1 ? 'spesa' : 'spese'}${F.all ? ' in tutti i mesi' : ''} · totale `, `${txs.length} ${txs.length === 1 ? 'expense' : 'expenses'}${F.all ? ' across all months' : ''} · total `)) + '<b>' + esc(money(txs.reduce((s, t) => s + toNum(t.a), 0))) + '</b>';
+  if (!txs.length && F.active) { list.append(el('p', 'empty', esc(t3('No hay gastos que coincidan con tu búsqueda.', 'Nessuna spesa corrisponde alla ricerca.', 'No expenses match your search.')))); return; }
   if (!txs.length) {
     list.append(el('p', 'empty', esc(t3('Aún no has apuntado gastos este mes. Pulsa «+» para apuntar uno en segundos, o importa el extracto de tu banco.', 'Non hai ancora annotato spese questo mese. Premi «+» per aggiungerne una in pochi secondi o importa l\'estratto conto.', 'No expenses logged this month yet. Tap «+» to add one in seconds, or import your bank statement.'))));
     return;
   }
   let lastDay = '';
   txs.forEach(t => {
-    if (t.d !== lastDay) { lastDay = t.d; list.append(el('div', 'txDay', esc(dayLabel(t.d)))); }
+    if (t.d !== lastDay) { lastDay = t.d; list.append(el('div', 'txDay', esc(dayLabel(t.d) + (F.all && t.d.slice(0, 4) !== today().slice(0, 4) ? ' ' + t.d.slice(0, 4) : '')))); }
     const c = catOf(t.c);
     const r = el('div', 'tx');
     r.innerHTML = `<span class="em">${esc(c.emoji)}</span><div style="min-width:0"><div class="nm">${esc(c.name)}</div>${t.n ? `<div class="nt">${esc(t.n)}</div>` : ''}</div><span class="am">${esc(money(t.a))}</span><button type="button" class="remove" title="${esc(t3('Eliminar movimiento', 'Elimina movimento', 'Delete transaction'))}" aria-label="${esc(t3('Eliminar movimiento', 'Elimina movimento', 'Delete transaction'))}">×</button>`;
@@ -334,7 +340,15 @@ function goalStatus(g){
   let msg;
   if (!(tgt > 0)) msg = esc(t3('Escribe cuánto quieres conseguir.', 'Scrivi quanto vuoi raggiungere.', 'Enter how much you want to reach.'));
   else if (sv >= tgt) msg = esc(t3('¡Objetivo conseguido! 🎉', 'Obiettivo raggiunto! 🎉', 'Goal reached! 🎉'));
-  else msg = `${esc(t3('Te faltan', 'Ti mancano', 'You still need'))} <b>${esc(money(tgt - sv))}</b> · ${Math.round(pct)} %`;
+  else {
+    msg = `${esc(t3('Te faltan', 'Ti mancano', 'You still need'))} <b>${esc(money(tgt - sv))}</b> · ${Math.round(pct)} %`;
+    if (g.date) {
+      const [y1, m1] = curMonth().split('-').map(Number), [y2, m2] = g.date.split('-').map(Number), n = (y2 - y1) * 12 + (m2 - m1);
+      msg += n > 0
+        ? ` · ${esc(t3('Ahorra', 'Metti da parte', 'Save'))} <b>${esc(money((tgt - sv) / n))} ${esc(t3('al mes', 'al mese', 'a month'))}</b> ${esc(t3('para conseguirlo en', 'per raggiungerlo a', 'to reach it by'))} ${esc(monthLabel(g.date))}`
+        : ` · ${esc(t3('La fecha ya ha llegado: cambia la fecha o aporta lo que falta.', 'La data è arrivata: cambiala o versa quanto manca.', 'The date has arrived: change it or add what\'s missing.'))}`;
+    }
+  }
   return { pct, msg };
 }
 function renderGoals(){
@@ -344,12 +358,13 @@ function renderGoals(){
   X.goals.forEach(g => {
     const c = el('div', 'goal'); c.dataset.id = g.id;
     c.innerHTML = `<div class="goalHead"><button type="button" class="emoji${g.emoji ? '' : ' empty'}" aria-label="${esc(t3('Cambiar emoji', 'Cambia emoji', 'Change emoji'))}">${g.emoji ? esc(g.emoji) + '<span class="plus">+</span>' : '+'}</button><input class="gName" maxlength="60" value="${esc(g.name)}" placeholder="${esc(t3('Ej. Vacaciones', 'Es. Vacanze', 'e.g. Holidays'))}" aria-label="${esc(t3('Nombre del objetivo', 'Nome dell\'obiettivo', 'Goal name'))}"><button type="button" class="remove" aria-label="${esc(t3('Eliminar objetivo', 'Elimina obiettivo', 'Delete goal'))}">×</button></div>
-      <div class="goalNums"><label>${esc(t3('Objetivo', 'Obiettivo', 'Target'))}<input class="gTarget" inputmode="decimal" value="${esc(toInput(g.target || ''))}" placeholder="0,00"></label><label>${esc(t3('Ahorrado', 'Risparmiato', 'Saved'))}<input class="gSaved" inputmode="decimal" value="${esc(toInput(g.saved || ''))}" placeholder="0,00"></label><button type="button" class="addSmall gAdd">+ ${esc(t3('Aportar', 'Versa', 'Add money'))}</button></div>
+      <div class="goalNums withDate"><label>${esc(t3('Objetivo', 'Obiettivo', 'Target'))}<input class="gTarget" inputmode="decimal" value="${esc(toInput(g.target || ''))}" placeholder="0,00"></label><label>${esc(t3('Ahorrado', 'Risparmiato', 'Saved'))}<input class="gSaved" inputmode="decimal" value="${esc(toInput(g.saved || ''))}" placeholder="0,00"></label><label>${esc(t3('Para cuándo', 'Entro quando', 'By when'))}<input class="gDate" type="month" value="${esc(g.date || '')}" min="${esc(curMonth())}"></label><button type="button" class="addSmall gAdd">+ ${esc(t3('Aportar', 'Versa', 'Add money'))}</button></div>
       <div class="goalBar"><i></i></div><p class="goalMsg"></p>`;
     c.querySelector('.emoji').onclick = ev => { ev.stopPropagation(); openEmojiPicker(ev.currentTarget, 'goal:' + g.id); };
     c.querySelector('.gName').oninput = e => { g.name = e.target.value; saveX(); };
     c.querySelector('.gTarget').oninput = e => { g.target = toNum(e.target.value); updateGoalsProgress(); saveX(); };
     c.querySelector('.gSaved').oninput = e => { g.saved = toNum(e.target.value); updateGoalsProgress(); saveX(); };
+    c.querySelector('.gDate').onchange = e => { g.date = /^\d{4}-\d{2}$/.test(e.target.value) ? e.target.value : ''; updateGoalsProgress(); saveX(); };
     c.querySelector('.remove').onclick = () => { if (!confirm(t3('¿Eliminar este objetivo?', 'Eliminare questo obiettivo?', 'Delete this goal?'))) return; X.goals = X.goals.filter(x => x !== g); saveX(); renderGoals(); };
     c.querySelector('.gAdd').onclick = () => {
       const v = toNum(prompt(t3('¿Cuánto quieres aportar a este objetivo?', 'Quanto vuoi versare in questo obiettivo?', 'How much do you want to add to this goal?'), ''));
@@ -847,6 +862,161 @@ function renderSubs(){
     box.append(r);
   });
 }
+
+// ---------- 6 · plan para pagar deudas (bola de nieve / avalancha) ----------
+const debtCfg = () => { X.debtCfg = X.debtCfg && typeof X.debtCfg === 'object' ? X.debtCfg : {}; return X.debtCfg; };
+const debtTotal = () => X ? (X.debts || []).reduce((s, d) => s + Math.max(0, toNum(d.balance)), 0) : 0;
+function simDebts(list, extra, method){
+  const ds = list.filter(d => toNum(d.balance) > 0).map(d => ({ name: (d.name || '').trim() || t3('Deuda', 'Debito', 'Debt'), b: toNum(d.balance), r: Math.max(0, toNum(d.rate)) / 1200, min: Math.max(0, toNum(d.min)) }));
+  if (!ds.length) return null;
+  const budget = ds.reduce((s, d) => s + d.min, 0) + Math.max(0, extra);
+  const order = (a, b) => method === 'aval' ? (b.r - a.r || a.b - b.b) : (a.b - b.b || b.r - a.r);
+  let m = 0, interest = 0; const done = [];
+  while (ds.some(d => d.b > 0.005) && m < 600) {
+    m++;
+    ds.forEach(d => { if (d.b > 0.005) { const i = d.b * d.r; d.b += i; interest += i; } });
+    let left = budget;
+    ds.forEach(d => { if (d.b > 0.005) { const p = Math.min(d.min, d.b, left); d.b -= p; left -= p; } });
+    ds.filter(d => d.b > 0.005).sort(order).forEach(d => { const p = Math.min(d.b, left); d.b -= p; left -= p; });
+    ds.forEach(d => { if (d.b <= 0.005 && !d.done) { d.done = m; d.b = 0; done.push({ name: d.name, month: m }); } });
+  }
+  return { ok: !ds.some(d => d.b > 0.005), months: m, interest: r2(interest), done, budget: r2(budget) };
+}
+function renderDebts(){
+  const box = $('#debts'); if (!box) return; box.innerHTML = '';
+  if (!X) return;
+  X.debts = Array.isArray(X.debts) ? X.debts : [];
+  if (!X.debts.length) box.append(el('p', 'empty', esc(t3('No tienes deudas apuntadas. Si tienes algún préstamo o tarjeta, añádelo aquí.', 'Nessun debito annotato. Se hai un prestito o una carta, aggiungilo qui.', 'No debts added. If you have a loan or card, add it here.'))));
+  X.debts.forEach(d => {
+    const c = el('div', 'goal');
+    c.innerHTML = `<div class="goalHead"><span class="emoji" aria-hidden="true">💳</span><input class="dName" maxlength="60" value="${esc(d.name || '')}" placeholder="${esc(t3('Ej. Tarjeta, préstamo del coche', 'Es. Carta, prestito auto', 'e.g. Credit card, car loan'))}" aria-label="${esc(t3('Nombre de la deuda', 'Nome del debito', 'Debt name'))}"><button type="button" class="remove" aria-label="${esc(t3('Eliminar deuda', 'Elimina debito', 'Delete debt'))}">×</button></div>
+      <div class="debtNums"><label>${esc(t3('Debes', 'Devi', 'You owe'))}<input class="dBal" inputmode="decimal" value="${esc(toInput(d.balance || ''))}" placeholder="0,00"></label><label>${esc(t3('Interés anual (%)', 'Interesse annuo (%)', 'Yearly interest (%)'))}<input class="dRate" inputmode="decimal" value="${esc(toInput(d.rate || ''))}" placeholder="${esc(t3('Ej. 18', 'Es. 18', 'e.g. 18'))}"></label><label>${esc(t3('Cuota mínima al mes', 'Rata minima al mese', 'Minimum monthly payment'))}<input class="dMin" inputmode="decimal" value="${esc(toInput(d.min || ''))}" placeholder="0,00"></label></div>`;
+    const bind = (cls, key, num) => { c.querySelector(cls).oninput = e => { d[key] = num ? toNum(e.target.value) : e.target.value; saveX(); updateDebtPlan(); renderYear(); }; };
+    bind('.dName', 'name'); bind('.dBal', 'balance', 1); bind('.dRate', 'rate', 1); bind('.dMin', 'min', 1);
+    c.querySelector('.remove').onclick = () => { if (!confirm(t3('¿Eliminar esta deuda?', 'Eliminare questo debito?', 'Delete this debt?'))) return; X.debts = X.debts.filter(x => x !== d); saveX(); renderDebts(); renderYear(); };
+    box.append(c);
+  });
+  const cfg = debtCfg();
+  $('#debtExtra').value = cfg.extra ? toInput(cfg.extra) : '';
+  updateDebtPlan();
+}
+function updateDebtPlan(){
+  if (!X) return;
+  const cfg = debtCfg(), method = cfg.method === 'aval' ? 'aval' : 'snow';
+  $('#debtMini').textContent = money(debtTotal());
+  document.querySelectorAll('.debtOpt').forEach(b => b.setAttribute('aria-pressed', b.dataset.method === method ? 'true' : 'false'));
+  $('#debtMethodHint').textContent = method === 'aval'
+    ? t3('Avalancha: pagas el mínimo en todas y todo lo demás va a la deuda con más interés. Es la forma de pagar menos intereses.', 'Valanga: paghi il minimo su tutti e il resto va al debito con l\'interesse più alto. Così paghi meno interessi.', 'Avalanche: pay the minimum on all and put the rest on the highest-interest debt. This costs the least interest.')
+    : t3('Bola de nieve: pagas el mínimo en todas y todo lo demás va a la deuda más pequeña. Liquidas deudas antes y te motiva seguir.', 'Palla di neve: paghi il minimo su tutti e il resto va al debito più piccolo. Ne chiudi prima qualcuno e resti motivato.', 'Snowball: pay the minimum on all and put the rest on the smallest debt. You clear debts sooner and stay motivated.');
+  const plan = $('#debtPlan'), res = $('#debtResult');
+  const active = (X.debts || []).filter(d => toNum(d.balance) > 0);
+  plan.hidden = !active.length;
+  if (!active.length) { res.innerHTML = ''; return; }
+  if (active.some(d => !(toNum(d.min) > 0)) && !(toNum(cfg.extra) > 0)) { res.innerHTML = `<div class="debtBox">${esc(t3('Escribe la cuota mínima que pagas al mes en cada deuda para calcular tu plan.', 'Scrivi la rata minima mensile di ogni debito per calcolare il piano.', 'Enter the minimum monthly payment for each debt to build your plan.'))}</div>`; return; }
+  const r = simDebts(X.debts, toNum(cfg.extra), method);
+  if (!r.ok) { res.innerHTML = `<div class="debtBox neg">${esc(t3('Con estos pagos la deuda no termina de bajar: los intereses son casi tan altos como lo que pagas. Sube la cuota o el extra al mes.', 'Con questi pagamenti il debito non scende: gli interessi sono quasi pari a quanto paghi. Aumenta la rata o l\'extra mensile.', 'With these payments the debt never clears: interest is almost as high as what you pay. Raise the payment or the monthly extra.'))}</div>`; return; }
+  const free = monthLabel(addMonths(curMonth(), r.months));
+  const other = simDebts(X.debts, toNum(cfg.extra), method === 'aval' ? 'snow' : 'aval');
+  let cmp = '';
+  if (other && other.ok) {
+    const diff = r2(other.interest - r.interest);
+    if (diff > 1) cmp = t3(`Con este método ahorras ${money(diff)} en intereses frente al otro.`, `Con questo metodo risparmi ${money(diff)} di interessi rispetto all'altro.`, `This method saves you ${money(diff)} in interest vs the other.`);
+    else if (diff < -1) cmp = (method === 'snow' ? t3('Con avalancha', 'Con la valanga', 'With avalanche') : t3('Con bola de nieve', 'Con la palla di neve', 'With snowball')) + t3(` pagarías ${money(-diff)} menos de intereses.`, ` pagheresti ${money(-diff)} in meno di interessi.`, ` you'd pay ${money(-diff)} less interest.`);
+    else cmp = t3('Los dos métodos te cuestan casi lo mismo: elige el que te motive más.', 'I due metodi costano quasi uguale: scegli quello che ti motiva di più.', 'Both methods cost about the same: pick the one that motivates you.');
+  }
+  const extraTip = toNum(cfg.extra) > 0 ? '' : ' ' + t3('Si añades un extra al mes, terminarás antes.', 'Se aggiungi un extra al mese, finirai prima.', 'Adding a monthly extra will get you there sooner.');
+  res.innerHTML = `<div class="debtBox"><div class="muted" style="font-size:.85rem;font-weight:700">${esc(t3('Libre de deudas en', 'Libero dai debiti a', 'Debt-free by'))}</div><div class="big">🎉 ${esc(free)}</div>
+    <div style="margin-top:4px">${esc(t3(`${r.months} meses pagando ${money(r.budget)} al mes · pagarás ${money(r.interest)} de intereses.`, `${r.months} mesi pagando ${money(r.budget)} al mese · pagherai ${money(r.interest)} di interessi.`, `${r.months} months paying ${money(r.budget)} a month · ${money(r.interest)} in interest.`) + extraTip)}</div>
+    <ol class="debtSteps">${r.done.map((d, i) => `<li><span>${i + 1}.</span><span>${esc(d.name)}</span><b>${esc(monthLabel(addMonths(curMonth(), d.month)))}</b></li>`).join('')}</ol>
+    ${cmp ? `<p class="debtCmp">${esc(cmp)}</p>` : ''}</div>`;
+}
+$('#addDebt').onclick = () => {
+  if (!X) return;
+  X.debts = Array.isArray(X.debts) ? X.debts : [];
+  X.debts.push({ id:newId(), name:'', balance:0, rate:0, min:0 });
+  saveX(); renderDebts();
+  const last = $('#debts').lastElementChild; if (last && last.querySelector('.dName')) last.querySelector('.dName').focus();
+};
+$('#debtExtra').oninput = e => { if (!X) return; debtCfg().extra = toNum(e.target.value); saveX(); updateDebtPlan(); };
+document.querySelectorAll('.debtOpt').forEach(b => { b.onclick = () => { if (!X) return; debtCfg().method = b.dataset.method; saveX(); updateDebtPlan(); }; });
+
+// ---------- 10 · resumen del año y patrimonio neto ----------
+let selYear = new Date().getFullYear();
+function minYear(){
+  let y = new Date().getFullYear();
+  if (X) { X.tx.forEach(t => { y = Math.min(y, Number(t.d.slice(0, 4))); }); Object.keys(X.history).forEach(m => { y = Math.min(y, Number(m.slice(0, 4))); }); }
+  return y;
+}
+$('#prevYear').onclick = () => { if (selYear > minYear()) { selYear--; renderYear(); } };
+$('#nextYear').onclick = () => { if (selYear < new Date().getFullYear()) { selYear++; renderYear(); } };
+function snapshotWorth(){
+  if (!X || !window.budgetLoaded) return;
+  X.worth = X.worth && typeof X.worth === 'object' && !Array.isArray(X.worth) ? X.worth : {};
+  const n = { a: r2(toNum(savings.now)), d: r2(debtTotal()) }, h = X.worth[curMonth()];
+  if (!h || h.a !== n.a || h.d !== n.d) { X.worth[curMonth()] = n; saveX(); }
+}
+function renderYear(){
+  if (!X || !$('#yearCard')) return;
+  const nowY = new Date().getFullYear();
+  $('#yearLabel').textContent = String(selYear);
+  $('#prevYear').disabled = selYear <= minYear(); $('#nextYear').disabled = selYear >= nowY;
+  const months = []; for (let i = 1; i <= 12; i++) { const m = selYear + '-' + pad(i); if (m <= curMonth()) months.push(m); }
+  const rows = months.map(m => { const p = planFor(m) || {}; return { m, inc: p.inc || 0, plan: p.plan || 0, spent: spentBy(m).total }; }).filter(r => r.inc || r.plan || r.spent);
+  const sum = k => rows.reduce((s, r) => s + r[k], 0), withSpent = rows.filter(r => r.spent > 0);
+  $('#yInc').textContent = rows.length ? money(sum('inc')) : '—';
+  $('#ySpent').textContent = withSpent.length ? money(sum('spent')) : '—';
+  $('#yAvg').textContent = withSpent.length ? money(sum('spent') / withSpent.length) : '—';
+  if (!rows.length) $('#yTable').innerHTML = `<p class="empty">${esc(t3('Aún no hay datos de este año.', 'Ancora nessun dato per quest\'anno.', 'No data for this year yet.'))}</p>`;
+  else {
+    const diff = r => r.spent > 0 ? `<span class="${r.plan - r.spent < 0 ? 'neg' : ''}">${esc((r.plan - r.spent < 0 ? '−' : '') + money(Math.abs(r.plan - r.spent)))}</span>` : '—';
+    $('#yTable').innerHTML = `<table><thead><tr><th>${esc(t3('Mes', 'Mese', 'Month'))}</th><th>${esc(t3('Ingresos', 'Entrate', 'Income'))}</th><th>${esc(t3('Presupuestado', 'Previsto', 'Budgeted'))}</th><th>${esc(t3('Gastado', 'Speso', 'Spent'))}</th><th>${esc(t3('Te sobró', 'Avanzato', 'Left over'))}</th></tr></thead><tbody>`
+      + rows.map(r => `<tr><td>${esc(monthLabel(r.m, true))}</td><td>${esc(money(r.inc))}</td><td>${esc(money(r.plan))}</td><td>${r.spent ? esc(money(r.spent)) : '—'}</td><td>${diff(r)}</td></tr>`).join('')
+      + `</tbody><tfoot><tr><td><b>${esc(t3('Total', 'Totale', 'Total'))}</b></td><td><b>${esc(money(sum('inc')))}</b></td><td><b>${esc(money(sum('plan')))}</b></td><td><b>${esc(money(sum('spent')))}</b></td><td></td></tr></tfoot></table>`;
+  }
+  const by = {};
+  X.tx.forEach(t => { if (t.d.slice(0, 4) !== String(selYear)) return; const k = (t.c != null && findCat(t.c)) ? String(t.c) : '_'; by[k] = (by[k] || 0) + toNum(t.a); });
+  const top = Object.keys(by).map(k => ({ k, v: by[k] })).sort((a, b) => b.v - a.v).slice(0, 6), mx = top.length ? top[0].v : 1;
+  $('#yTop').innerHTML = top.length ? top.map(x => { const c = catOf(x.k); return `<div class="yTop"><span>${esc(c.emoji)}</span><span>${esc(c.name)}</span><b>${esc(money(x.v))}</b><div class="bar2"><i style="width:${Math.max(2, x.v / mx * 100)}%"></i></div></div>`; }).join('')
+    : `<p class="empty">${esc(t3('Cuando apuntes gastos reales, aquí verás en qué se te va más dinero.', 'Quando annoterai spese reali, qui vedrai dove spendi di più.', 'Once you log real spending, you\'ll see where most of your money goes.'))}</p>`;
+  // patrimonio neto
+  const a = toNum(savings.now), d = debtTotal(), n = a - d;
+  $('#nwA').textContent = money(a); $('#nwD').textContent = money(d);
+  const nw = $('#nwN'); nw.textContent = (n < 0 ? '−' : '') + money(Math.abs(n)); nw.className = n < 0 ? 'neg' : '';
+  const hist = Object.keys(X.worth || {}).sort().slice(-12).map(m => ({ m, v: toNum(X.worth[m].a) - toNum(X.worth[m].d) }));
+  if (hist.length < 2) { $('#nwChart').innerHTML = `<p class="empty">${esc(t3('Cada mes guardamos tu patrimonio. Vuelve el mes que viene para ver cómo cambia.', 'Ogni mese salviamo il tuo patrimonio. Torna il mese prossimo per vedere come cambia.', 'We save your net worth every month. Come back next month to see how it changes.'))}</p>`; return; }
+  const W = Math.round(Math.max(300, Math.min(600, $('#nwChart').clientWidth || 600))), H = 170, T = 14, B = 24, ph = H - T - B;
+  const mxv = Math.max(1, ...hist.map(h => h.v)), mnv = Math.min(0, ...hist.map(h => h.v)), span = mxv - mnv || 1;
+  const y0 = T + mxv / span * ph, gw = (W - 8) / hist.length, bw = Math.min(30, gw * 0.6);
+  let g = `<line x1="4" x2="${W - 4}" y1="${y0}" y2="${y0}" stroke="var(--line)"/>`;
+  hist.forEach((h, i) => {
+    const x = 4 + gw * i + (gw - bw) / 2, hh = Math.abs(h.v) / span * ph, y = h.v >= 0 ? y0 - hh : y0;
+    g += `<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(hh, 1)}" rx="4" fill="${h.v >= 0 ? 'var(--s3)' : 'var(--danger)'}" data-tip="${esc(monthLabel(h.m) + ': ' + (h.v < 0 ? '−' : '') + money(Math.abs(h.v)))}"/>`;
+    g += `<text x="${x + bw / 2}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(monthLabel(h.m, true))}</text>`;
+  });
+  $('#nwChart').innerHTML = `<svg class="barsSvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t3('Evolución del patrimonio neto', 'Andamento del patrimonio netto', 'Net worth over time'))}">${g}</svg>`;
+}
+
+// ---------- 9 · buscar movimientos y etiquetas ----------
+function fillTxCats(){
+  const s = $('#txCat'), v = s.value;
+  s.innerHTML = `<option value="">${esc(t3('Todas las categorías', 'Tutte le categorie', 'All categories'))}</option>` + expenses.map(e => `<option value="${esc(e.id)}">${esc((e.emoji || '') + ' ' + (e.name || ''))}</option>`).join('') + `<option value="_">${esc('❓ ' + t3('Sin categoría', 'Senza categoria', 'Uncategorised'))}</option>`;
+  s.value = [...s.options].some(o => o.value === v) ? v : '';
+}
+function renderTags(){
+  const cnt = {};
+  X.tx.forEach(t => (String(t.n || '').match(/#[\p{L}\p{N}_-]{2,}/gu) || []).forEach(h => { h = h.toLowerCase(); cnt[h] = (cnt[h] || 0) + 1; }));
+  const tags = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]).slice(0, 12), q = $('#txQ').value.trim().toLowerCase();
+  const box = $('#txTags'); box.innerHTML = '';
+  tags.forEach(h => { const b = el('button', h === q ? 'sel' : '', esc(h)); b.type = 'button'; b.onclick = () => { $('#txQ').value = h === q ? '' : h; if (h !== q) $('#txAllMonths').checked = true; renderMoves(); }; box.append(b); });
+}
+['#txQ', '#txCat', '#txAllMonths'].forEach(s => { const e = $(s); e.addEventListener(s === '#txQ' ? 'input' : 'change', () => renderMoves()); });
+window.txFilter = function(base){
+  const q = $('#txQ').value.trim().toLowerCase(), fc = $('#txCat').value, all = $('#txAllMonths').checked;
+  let txs = all ? X.tx.slice() : base;
+  if (fc) txs = txs.filter(t => fc === '_' ? !(t.c != null && findCat(t.c)) : same(t.c, fc));
+  if (q) { const qa = parseAmt(q); txs = txs.filter(t => ((t.n || '') + ' ' + catOf(t.c).name).toLowerCase().includes(q) || (qa > 0 && Math.abs(toNum(t.a) - qa) < 0.005)); }
+  return { txs, active: !!(q || fc || all), all };
+};
 
 // ---------- extras: modo oscuro, instalar app, cambiar idioma ----------
 const bar = document.querySelector('.lang-bar');

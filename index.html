@@ -268,6 +268,41 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .sub .acts { grid-column:2 / -1; display:flex; gap:8px; flex-wrap:wrap; }
 .sub .acts button { padding:6px 12px; font-size:.82rem; }
 .sub.known { opacity:.75; }
+.txSearch { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; margin:0 0 8px; }
+.txSearch input[type=search], .txSearch select, .debtExtra input { min-width:0; border:1px solid var(--line); background:var(--input); color:var(--ink); border-radius:10px; padding:9px 11px; font:inherit; outline:none; }
+.txSearch select { max-width:180px; }
+.txAll { display:flex; gap:6px; align-items:center; font-size:.85rem; color:var(--muted); font-weight:650; white-space:nowrap; }
+@media (max-width:620px){ .txSearch { grid-template-columns:1fr 1fr; } .txSearch input[type=search] { grid-column:1 / -1; } .txSearch select { max-width:none; } }
+.txTags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+.txTags button { background:var(--soft); color:var(--blue); padding:4px 10px; font-size:.8rem; border-radius:99px; }
+.txTags button.sel { background:var(--blue); color:#fff; }
+.txFound { margin:6px 0 0; font-size:.88rem; color:var(--muted); }
+.subH { margin:22px 0 10px; font-size:1rem; }
+#nwChart svg { max-height:200px; }
+#yTable { overflow-x:auto; }
+#yTable td:not(:first-child), #yTable th:not(:first-child) { text-align:right; }
+.yTop { display:grid; grid-template-columns:28px 1fr auto; gap:8px; align-items:center; padding:6px 4px; border-bottom:1px solid var(--line); font-size:.92rem; }
+.yTop .bar2 { grid-column:2 / -1; height:6px; border-radius:99px; background:var(--soft); overflow:hidden; }
+.yTop .bar2 i { display:block; height:100%; background:var(--s1); border-radius:99px; }
+.neg { color:var(--danger); }
+.debtNums { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px; align-items:end; }
+.debtNums label { font-size:.78rem; color:var(--muted); font-weight:700; }
+.debtNums input { min-width:0; width:100%; padding:8px 10px; border:1px solid transparent; background:var(--input); border-radius:8px; color:var(--ink); font:inherit; font-weight:650; outline:none; }
+.debtNums input:focus { border-color:var(--blue); }
+.debtPlan { margin-top:16px; }
+.debtOpt { background:var(--soft); color:var(--ink); border:2px solid transparent; border-radius:99px; padding:6px 12px; }
+.debtOpt[aria-pressed="true"] { border-color:var(--blue); background:#eef3ff; color:var(--blue); }
+:root[data-theme="dark"] .debtOpt[aria-pressed="true"], :root[data-theme="dark"] .txTags button:not(.sel) { background:#1d2a4a; }
+.debtCtl { display:flex; flex-wrap:wrap; gap:12px; align-items:end; justify-content:space-between; }
+.debtExtra { font-size:.78rem; color:var(--muted); font-weight:700; display:grid; gap:5px; }
+.debtBox { margin-top:12px; padding:16px; border-radius:15px; background:var(--soft); }
+.debtBox .big { font-size:1.35rem; font-weight:800; }
+.debtSteps { margin:12px 0 0; padding:0; list-style:none; }
+.debtSteps li { display:grid; grid-template-columns:28px 1fr auto; gap:8px; padding:6px 0; border-top:1px solid var(--line); font-size:.9rem; }
+.debtSteps li b { white-space:nowrap; }
+.debtCmp { margin-top:10px; font-size:.86rem; color:var(--muted); }
+.goalNums.withDate { grid-template-columns:1fr 1fr 1fr auto; }
+@media (max-width:620px){ .debtNums { grid-template-columns:1fr 1fr; } .goalNums.withDate { grid-template-columns:1fr 1fr; } }
 .qErr { color:var(--danger); font-size:.85rem; min-height:1.2em; margin:8px 0 0; }
 .impTable { max-height:52vh; overflow:auto; border:1px solid var(--line); border-radius:12px; }
 .impTable table { width:100%; border-collapse:collapse; font-size:.85rem; }
@@ -303,6 +338,7 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .fundTable tfoot td { font-weight:800; border-bottom:0; }
 @media (max-width:620px){ .fundTop { grid-template-columns:1fr; } .fundX { text-align:center; } }
 body.privacy #appWrap .fundTable td.r { filter:blur(7px); }
+body.privacy #appWrap .debtNums input, body.privacy #appWrap .debtExtra input, body.privacy #appWrap .yTop b, body.privacy #appWrap .debtBox, body.privacy #appWrap .sub .yr, body.privacy #appWrap .sub .dt, body.privacy #appWrap .txFound b, body.privacy #appWrap #yTable td, body.privacy #appWrap #yTable tfoot { filter:blur(7px); }
 /* seguridad */
 #newPassForm { display:grid; gap:10px; }
 #newPassForm label { font-weight:700; font-size:.88rem; color:var(--muted); display:block; }
@@ -451,6 +487,9 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
   <div class="metric"><span>Gastado de verdad</span><strong id="mvSpent">0,00 €</strong></div>
   <div class="metric"><span>Diferencia</span><strong id="mvDiff">—</strong></div>
 </div>
+<div class="txSearch"><input type="search" id="txQ" placeholder="Buscar: texto, #etiqueta o importe" aria-label="Buscar gastos" autocomplete="off"><select id="txCat" aria-label="Filtrar por categoría"></select><label class="txAll"><input type="checkbox" id="txAllMonths"> Todos los meses</label></div>
+<div class="txTags" id="txTags"></div>
+<p class="txFound" id="txFound" hidden></p>
 <div id="txList"></div>
 <div class="txActions">
   <button type="button" class="add" id="addTx">+ Apuntar gasto</button>
@@ -465,6 +504,26 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
   <div class="chartBox"><h3>¿En qué se va tu dinero?</h3><p class="cap" id="donutCap"></p><div class="donutWrap" id="donut"></div></div>
   <div class="chartBox"><h3>Evolución de los últimos 6 meses</h3><div class="legendRow"><span style="--c:var(--s1)">Presupuestado</span><span style="--c:var(--s2)">Gastado de verdad</span></div><div id="bars"></div></div>
 </div>
+</section>
+<section class="card" id="yearCard">
+<div class="card-top"><h2><button type="button" class="toggle" data-key="anual" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>📆 Resumen del año</h2>
+<div class="monthNav"><button type="button" id="prevYear" title="Año anterior" aria-label="Año anterior">‹</button><strong id="yearLabel"></strong><button type="button" id="nextYear" title="Año siguiente" aria-label="Año siguiente">›</button></div></div>
+<div class="moveSummary">
+  <div class="metric"><span>Ingresos del año</span><strong id="yInc">—</strong></div>
+  <div class="metric"><span>Gastado de verdad</span><strong id="ySpent">—</strong></div>
+  <div class="metric"><span>Gasto medio al mes</span><strong id="yAvg">—</strong></div>
+</div>
+<div class="fundTable" id="yTable"></div>
+<h3 class="subH">🏆 En qué gastaste más</h3>
+<div id="yTop"></div>
+<h3 class="subH">💎 Tu patrimonio neto</h3>
+<p class="groupHint">Lo que tienes ahorrado menos lo que debes. Se apunta cada mes para que veas cómo crece.</p>
+<div class="moveSummary">
+  <div class="metric"><span>Ahorrado</span><strong id="nwA">—</strong></div>
+  <div class="metric"><span>Deudas</span><strong id="nwD">—</strong></div>
+  <div class="metric"><span>Patrimonio neto</span><strong id="nwN">—</strong></div>
+</div>
+<div id="nwChart"></div>
 </section>
 <section class="card" id="billsCard">
 <div class="card-top"><h2><button type="button" class="toggle" data-key="pagos" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>📅 Próximos pagos</h2><button type="button" class="ghost" id="notifyBtn" hidden>🔔 Activar avisos</button></div>
@@ -522,6 +581,22 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
   <p class="groupHint">Crea un objetivo para cada meta: vacaciones, fondo de emergencia, coche…</p>
   <div class="goals" id="goals"></div>
   <button type="button" class="addSmall" id="addGoal">+ Añadir objetivo</button>
+</div>
+</section>
+<section class="card" id="debtCard">
+<div class="card-top"><h2><button type="button" class="toggle" data-key="deudas" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>💳 Plan para pagar tus deudas</h2><div class="miniSum"><span>Debes<b id="debtMini">0,00 €</b></span></div></div>
+<p class="groupHint">Apunta tus préstamos y tarjetas. Te diremos en qué orden pagarlos y cuándo quedarás libre de deudas.</p>
+<div class="goals" id="debts"></div>
+<button type="button" class="addSmall" id="addDebt">+ Añadir deuda</button>
+<div class="debtPlan" id="debtPlan">
+  <div class="debtCtl">
+    <label class="debtExtra">Extra al mes para deudas<input id="debtExtra" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
+    <div class="fundPick" role="group" aria-label="Método">
+      <button type="button" class="debtOpt" data-method="snow" aria-pressed="true">❄️ Bola de nieve</button><button type="button" class="debtOpt" data-method="aval" aria-pressed="false">🏔️ Avalancha</button>
+    </div>
+  </div>
+  <p class="groupHint" id="debtMethodHint"></p>
+  <div id="debtResult"></div>
 </div>
 </section>
 <section class="card collapsed" id="secCard">
@@ -1085,6 +1160,27 @@ document.querySelectorAll('.toggle').forEach(btn => {
     "y la": ["e l'", "and the"],
     "política de privacidad": ["informativa sulla privacy", "privacy policy"],
     "Para crear una cuenta debes tener al menos 16 años y aceptar los términos y la política de privacidad.": ["Per creare un account devi avere almeno 16 anni e accettare i termini e l'informativa sulla privacy.", "To create an account you must be at least 16 and accept the terms and the privacy policy."],
+    "📷 Escanear ticket": ["📷 Scansiona scontrino", "📷 Scan receipt"],
+    "🔁 Suscripciones detectadas": ["🔁 Abbonamenti rilevati", "🔁 Detected subscriptions"],
+    "Al año": ["All'anno", "Per year"],
+    "Buscar: texto, #etiqueta o importe": ["Cerca: testo, #etichetta o importo", "Search: text, #tag or amount"],
+    "Todos los meses": ["Tutti i mesi", "All months"],
+    "📆 Resumen del año": ["📆 Riepilogo dell'anno", "📆 Year summary"],
+    "Ingresos del año": ["Entrate dell'anno", "Income this year"],
+    "Gasto medio al mes": ["Spesa media al mese", "Average monthly spend"],
+    "🏆 En qué gastaste más": ["🏆 Dove hai speso di più", "🏆 Where you spent most"],
+    "💎 Tu patrimonio neto": ["💎 Il tuo patrimonio netto", "💎 Your net worth"],
+    "Lo que tienes ahorrado menos lo que debes. Se apunta cada mes para que veas cómo crece.": ["Quanto hai risparmiato meno quanto devi. Si registra ogni mese per vedere come cresce.", "What you have saved minus what you owe. Recorded every month so you can watch it grow."],
+    "Ahorrado": ["Risparmiato", "Saved"],
+    "Deudas": ["Debiti", "Debts"],
+    "Patrimonio neto": ["Patrimonio netto", "Net worth"],
+    "💳 Plan para pagar tus deudas": ["💳 Piano per pagare i debiti", "💳 Debt payoff plan"],
+    "Debes": ["Devi", "You owe"],
+    "Apunta tus préstamos y tarjetas. Te diremos en qué orden pagarlos y cuándo quedarás libre de deudas.": ["Annota prestiti e carte. Ti diremo in che ordine pagarli e quando sarai libero dai debiti.", "Add your loans and cards. We'll tell you which order to pay them in and when you'll be debt-free."],
+    "+ Añadir deuda": ["+ Aggiungi debito", "+ Add debt"],
+    "Extra al mes para deudas": ["Extra al mese per i debiti", "Extra per month for debts"],
+    "❄️ Bola de nieve": ["❄️ Palla di neve", "❄️ Snowball"],
+    "🏔️ Avalancha": ["🏔️ Valanga", "🏔️ Avalanche"],
     "🛟 Fondo de emergencia para gastos fijos": ["🛟 Fondo di emergenza per le spese fisse", "🛟 Emergency fund for fixed expenses"],
     "Lo que necesitas tener ahorrado para pagar tus gastos fijos durante los meses que elijas, aunque te quedes sin ingresos.": ["Quanto ti serve avere da parte per pagare le spese fisse per i mesi che scegli, anche se resti senza entrate.", "How much you need saved to cover your fixed expenses for the months you choose, even if your income stops."],
     "¿Para cuántos meses?": ["Per quanti mesi?", "For how many months?"],
