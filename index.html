@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mi presupuesto</title>
 <!-- Seguridad: limita desde dónde se pueden cargar scripts, estilos y conexiones -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://nhhskvauwdudhojjvodi.supabase.co wss://nhhskvauwdudhojjvodi.supabase.co https://api.pwnedpasswords.com https://open.er-api.com https://ve.dolarapi.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://nhhskvauwdudhojjvodi.supabase.co https://api.pwnedpasswords.com https://open.er-api.com https://ve.dolarapi.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="Organiza tus ingresos, apunta tus gastos y mira al instante cuánto te queda cada mes.">
 <link rel="manifest" href="manifest.webmanifest">
@@ -15,7 +15,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Presupuesto">
 <script>try{var th=localStorage.getItem('alesagli-theme');if(!th)th=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=th;}catch(e){}</script>
-<script src="supabase.min.js"></script>
+<script src="nube.js"></script>
 <style>
 :root { --ink:#19243a; --muted:#6d7890; --line:#e4e9f1; --blue:#3567ee; --green:#17a876; --soft:#f5f7fb; --danger:#cf4f5b; }
 * { box-sizing:border-box; }
@@ -384,7 +384,7 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
       <button class="add" id="newPassSubmit">Guardar nueva contraseña</button>
     </form>
     <p class="authMsg" id="authMsg"></p>
-    <p class="authNote">Tus datos se guardan de forma segura y cifrada en Supabase. Cada persona solo puede ver y modificar su propio presupuesto (protegido por Row Level Security).</p>
+    <p class="authNote">Tus datos se guardan de forma segura y cifrada en Google Firebase. Cada persona solo puede ver y modificar su propio presupuesto (protegido por reglas de seguridad).</p>
     <p class="authNote" style="margin-top:8px">Al crear una cuenta aceptas los términos de uso y la política de privacidad.<br><a href="terminos.html" style="color:var(--blue)">Términos de uso</a> · <a href="privacidad.html" style="color:var(--blue)">Privacidad y cookies</a></p>
   </section>
 </main>
@@ -562,10 +562,30 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
 </div>
 
 <script>
-// ---- Supabase setup ----
-const SUPABASE_URL = 'https://nhhskvauwdudhojjvodi.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_0EouCOgtpq146qgFsMusDg_bvQh58MI';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'alesagli-auth' } });
+// ---- Firebase (Google) setup: proyecto propio de Mi presupuesto, separado del Libro de ahorro ----
+const sb = window.crearNube({
+  apiKey: 'AIzaSyCqFMsnc_STmEqNLEocjj3QZMZf3oPj1C4',
+  projectId: 'mi-presupuesto-6ae2f',
+  storageKey: 'alesagli-firebase-auth',
+  single: ['budgets', 'user_data'],
+  // Cuentas antiguas de Supabase: al entrar por primera vez se copian sus datos a Firebase.
+  legacy: {
+    url: 'https://nhhskvauwdudhojjvodi.supabase.co',
+    key: 'sb_publishable_0EouCOgtpq146qgFsMusDg_bvQh58MI',
+    importar: async (fs, old) => {
+      const uid = fs.uid(), sid = encodeURIComponent(old.legacyUser.id);
+      const budgets = await old.get('budgets?select=*&user_id=eq.' + sid);
+      const rows = await old.get('expenses?select=*&user_id=eq.' + sid + '&order=created_at.asc');
+      let extra = [];
+      try { extra = await old.get('user_data?select=data&user_id=eq.' + sid); } catch (e) {}
+      await fs.setDoc('users/' + uid + '/tablas/budgets', { user_id: uid, salary: Number((budgets[0] || {}).salary) || 0, updated_at: new Date().toISOString() });
+      await fs.replaceList('users/' + uid + '/expenses', (rows || []).map(r => ({ id: String(r.id), user_id: uid, emoji: r.emoji || '', name: r.name || '', amount: Number(r.amount) || 0, created_at: r.created_at || new Date().toISOString() })));
+      if (extra[0] && extra[0].data) await fs.setDoc('users/' + uid + '/tablas/user_data', { user_id: uid, data: extra[0].data, updated_at: new Date().toISOString() });
+    }
+  }
+});
+// Al pasar a Firebase, se borra la sesión antigua de Supabase guardada en este navegador.
+try { localStorage.removeItem('alesagli-auth'); } catch (e) {}
 
 const $ = s => document.querySelector(s);
 const authWrap = $('#authWrap'), appWrap = $('#appWrap');
@@ -1151,7 +1171,7 @@ document.querySelectorAll('.toggle').forEach(btn => {
     "Cargando…": ["Caricamento…", "Loading…"],
     "Error al guardar": ["Errore di salvataggio", "Error saving"],
     "✓ Guardado en la nube": ["✓ Salvato nel cloud", "✓ Saved in the cloud"],
-    "Tus datos se guardan de forma segura y cifrada en Supabase. Cada persona solo puede ver y modificar su propio presupuesto (protegido por Row Level Security).": ["I tuoi dati sono salvati in modo sicuro e cifrato su Supabase. Ogni persona può vedere e modificare solo il proprio budget (protetto da Row Level Security).", "Your data is stored securely and encrypted on Supabase. Each person can only see and edit their own budget (protected by Row Level Security)."],
+    "Tus datos se guardan de forma segura y cifrada en Google Firebase. Cada persona solo puede ver y modificar su propio presupuesto (protegido por reglas de seguridad).": ["I tuoi dati sono salvati in modo sicuro e cifrato su Google Firebase. Ogni persona può vedere e modificare solo il proprio budget (protetto da regole di sicurezza).", "Your data is stored securely and encrypted on Google Firebase. Each person can only see and edit their own budget (protected by security rules)."],
     "Al crear una cuenta aceptas los términos de uso y la política de privacidad.": ["Creando un account accetti i termini d'uso e l'informativa sulla privacy.", "By creating an account you accept the terms of use and the privacy policy."],
     "Términos de uso": ["Termini d'uso", "Terms of use"],
     "Privacidad y cookies": ["Privacy e cookie", "Privacy & cookies"],

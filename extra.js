@@ -26,7 +26,7 @@ const esc = s => escapeHtml(s == null ? '' : s);
 const fmt2 = n => (Math.round(n * 100) / 100).toFixed(2).replace('.', ',');
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 
-// ---------- datos ampliados (tabla user_data en Supabase, con copia local) ----------
+// ---------- datos ampliados (documento user_data en Firebase, con copia local) ----------
 let X = null;            // { v, u, tx:[], meta:{}, incomes:[], goals:[], history:{} }
 let xMode = 'cloud';     // 'cloud' | 'local'
 let selMonth = curMonth();
