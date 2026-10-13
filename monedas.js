@@ -33,6 +33,8 @@ function render(){
   const usd = document.querySelector('#curRow [data-cur="USD"]'); if (usd) usd.textContent = '$ ' + t3('Dólares', 'Dollari', 'Dollars');
   const eur = document.querySelector('#curRow [data-cur="EUR"]'); if (eur) eur.textContent = '€ ' + t3('Euros', 'Euro', 'Euros');
   const q = document.getElementById('qAmount'); if (q) q.placeholder = '0,00 ' + sym();
+  // El subtítulo dice «cada euro» o «cada dólar» según la moneda elegida (la traducción la pone el traductor de la página).
+  const tl = document.getElementById('tagline'); if (tl) { const t = cur === 'USD' ? 'Organiza tus ingresos y decide a dónde va cada dólar.' : 'Organiza tus ingresos y decide a dónde va cada euro.'; if (tl.__base !== t) { tl.__base = t; tl.textContent = t; } }
 }
 function refresh(){
   render();

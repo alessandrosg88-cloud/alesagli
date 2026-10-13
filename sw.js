@@ -1,7 +1,7 @@
 // Service worker de Mi presupuesto: permite instalar la app y abrirla sin conexión.
 // Nunca guarda en caché las peticiones a Firebase (tus datos), solo los archivos de la propia app.
-const CACHE = 'mi-presupuesto-v8';
-const ASSETS = ['./', 'index.html', 'pareja.js', 'extra.js', 'monedas.js', 'nube.js', 'manifest.webmanifest', 'icon.svg','privacidad.html', 'terminos.html'];
+const CACHE = 'mi-presupuesto-v9';
+const ASSETS = ['./', 'index.html', 'pareja.js', 'extra.js', 'monedas.js', 'nube.js', 'manifest.webmanifest', 'icon.svg', 'logo.png', 'favicon-32.png', 'icon-192.png','privacidad.html', 'terminos.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

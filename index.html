@@ -10,7 +10,8 @@
 <meta name="description" content="Organiza tus ingresos, apunta tus gastos y mira al instante cuánto te queda cada mes.">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#19243a">
-<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Presupuesto">
@@ -25,6 +26,9 @@ body { margin:0; min-height:100vh; color:var(--ink); font:16px/1.45 Inter, ui-sa
 header { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:30px; }
 h1 { margin:0; font-size:clamp(2rem,5vw,3.25rem); letter-spacing:-.055em; }
 .sub { margin:7px 0 0; color:var(--muted); }
+.brand, .authTitle { display:flex; align-items:center; gap:14px; }
+.brandLogo { width:clamp(44px,6vw,60px); height:auto; aspect-ratio:1; border-radius:22%; box-shadow:0 6px 18px #0b122233; flex:none; }
+.authTitle .brandLogo { width:clamp(52px,7vw,72px); }
 .save { color:var(--green); font-size:.88rem; font-weight:700; background:#e5f8f0; padding:7px 11px; border-radius:99px; white-space:nowrap; }
 .save.saving { color:#a3762c; background:#fdf3e2; }
 .save.error { color:var(--danger); background:#fdecee; }
@@ -404,7 +408,7 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
 <main class="authWrap" id="authWrap" hidden>
   <section class="authHero">
     <span class="authBadge">💶 Tu dinero, bajo control</span>
-    <h1 class="authTitle">AhorroNexo</h1>
+    <h1 class="authTitle"><img class="brandLogo" src="logo.png" alt="" width="64" height="64">AhorroNexo</h1>
     <p class="authLead">Organiza tu salario, apunta tus gastos y mira al instante cuánto te queda cada mes.</p>
     <ul class="authPoints">
       <li>Reparte tu sueldo entre tus gastos del mes</li>
@@ -450,7 +454,7 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
 
 <main class="wrap" id="appWrap" hidden>
 <header>
-<div><h1>AhorroNexo</h1><p class="sub">Organiza tus ingresos y decide a dónde va cada euro.</p></div>
+<div><h1 class="brand"><img class="brandLogo" src="logo.png" alt="" width="56" height="56">AhorroNexo</h1><p class="sub" id="tagline">Organiza tus ingresos y decide a dónde va cada euro.</p></div>
 <div class="userbar">
   <span class="save" id="saveStatus">✓ Guardado en la nube</span>
   <span class="email" id="userEmail"></span>
@@ -1321,6 +1325,7 @@ document.querySelectorAll('.toggle').forEach(btn => {
     "Términos de uso": ["Termini d'uso", "Terms of use"],
     "Privacidad y cookies": ["Privacy e cookie", "Privacy & cookies"],
     "Términos de uso y aviso legal": ["Termini d'uso e note legali", "Terms of use & legal notice"],
+    "Organiza tus ingresos y decide a dónde va cada dólar.": ["Organizza le tue entrate e decidi dove va ogni dollaro.", "Organise your income and decide where every dollar goes."],
     "Organiza tus ingresos y decide a dónde va cada euro.": ["Organizza le tue entrate e decidi dove va ogni euro.", "Organise your income and decide where every euro goes."],
     "Cerrar sesión": ["Esci", "Sign out"],
     "Ingresos": ["Entrate", "Income"],
