@@ -847,7 +847,7 @@ function renderSubs(){
   }
   $('#subsInfo').innerHTML = esc(t3(`Hemos encontrado ${list.length} cargos que se repiten cada mes. En total te cuestan `, `Abbiamo trovato ${list.length} addebiti che si ripetono ogni mese. In totale ti costano `, `We found ${list.length} charges that repeat every month. Together they cost you `)) + '<b>' + esc(money(yearly)) + '</b>' + esc(t3(' al año. ¿Los usas todos?', ' all\'anno. Li usi tutti?', ' a year. Do you use them all?'));
   list.forEach(s => {
-    const r = el('div', 'sub' + (s.known ? ' known' : ''));
+    const r = el('div', 'subItem' + (s.known ? ' known' : ''));
     r.innerHTML = `<span class="em">🔁</span><div style="min-width:0"><div class="nm" title="${esc(s.name)}">${esc(s.name)}</div><div class="dt">${esc(money(s.amount) + t3(' al mes · ', ' al mese · ', ' a month · ') + t3(`visto en ${s.months} meses · suele cobrarse el día ${s.day}`, `visto in ${s.months} mesi · di solito il giorno ${s.day}`, `seen in ${s.months} months · usually on day ${s.day}`))}</div></div><div class="yr">${esc(money(s.amount * 12))}<small>${esc(t3('al año', 'all\'anno', 'a year'))}</small></div><div class="acts"></div>`;
     const acts = r.querySelector('.acts');
     if (s.known) acts.append(el('span', 'dt', esc('✓ ' + t3('Ya está en tus gastos fijos como «', 'È già nelle spese fisse come «', 'Already in your fixed expenses as «') + (s.known.name || '') + '»')));

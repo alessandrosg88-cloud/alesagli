@@ -1,6 +1,6 @@
 {
-  "name": "Mi presupuesto",
-  "short_name": "Presupuesto",
+  "name": "AhorroNexo",
+  "short_name": "AhorroNexo",
   "description": "Organiza tus ingresos, apunta tus gastos y mira al instante cuánto te queda cada mes.",
   "lang": "es",
   "start_url": "./",

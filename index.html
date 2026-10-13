@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mi presupuesto</title>
+<title>AhorroNexo</title>
 <!-- Seguridad: limita desde dónde se pueden cargar scripts, estilos y conexiones -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://nhhskvauwdudhojjvodi.supabase.co https://api.pwnedpasswords.com https://open.er-api.com https://ve.dolarapi.com https://cdn.jsdelivr.net; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -259,15 +259,15 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .qScan button { padding:8px 14px; font-size:.9rem; }
 .qScanMsg { color:var(--muted); font-size:.84rem; }
 .qScanMsg.err { color:var(--danger); }
-.sub { display:grid; grid-template-columns:34px 1fr auto; gap:10px; align-items:center; padding:10px 6px; border-bottom:1px solid var(--line); }
-.sub .em { width:34px; height:34px; display:grid; place-items:center; background:var(--soft); border-radius:10px; }
-.sub .nm { font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.sub .dt { color:var(--muted); font-size:.82rem; }
-.sub .yr { font-weight:750; text-align:right; white-space:nowrap; }
-.sub .yr small { display:block; color:var(--muted); font-weight:600; font-size:.75rem; }
-.sub .acts { grid-column:2 / -1; display:flex; gap:8px; flex-wrap:wrap; }
-.sub .acts button { padding:6px 12px; font-size:.82rem; }
-.sub.known { opacity:.75; }
+.subItem { display:grid; grid-template-columns:34px 1fr auto; gap:10px; align-items:center; padding:10px 6px; border-bottom:1px solid var(--line); }
+.subItem .em { width:34px; height:34px; display:grid; place-items:center; background:var(--soft); border-radius:10px; }
+.subItem .nm { font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.subItem .dt { color:var(--muted); font-size:.82rem; }
+.subItem .yr { font-weight:750; text-align:right; white-space:nowrap; }
+.subItem .yr small { display:block; color:var(--muted); font-weight:600; font-size:.75rem; }
+.subItem .acts { grid-column:2 / -1; display:flex; gap:8px; flex-wrap:wrap; }
+.subItem .acts button { padding:6px 12px; font-size:.82rem; }
+.subItem.known { opacity:.75; }
 .txSearch { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; margin:0 0 8px; }
 .txSearch input[type=search], .txSearch select, .debtExtra input { min-width:0; border:1px solid var(--line); background:var(--input); color:var(--ink); border-radius:10px; padding:9px 11px; font:inherit; outline:none; }
 .txSearch select { max-width:180px; }
@@ -348,7 +348,7 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .fundTable tfoot td { font-weight:800; border-bottom:0; }
 @media (max-width:620px){ .fundTop { grid-template-columns:1fr; } .fundX { text-align:center; } }
 body.privacy #appWrap .fundTable td.r { filter:blur(7px); }
-body.privacy #appWrap .debtNums input, body.privacy #appWrap .debtExtra input, body.privacy #appWrap .yTop b, body.privacy #appWrap .debtBox, body.privacy #appWrap .sub .yr, body.privacy #appWrap .sub .dt, body.privacy #appWrap .txFound b, body.privacy #appWrap #yTable td, body.privacy #appWrap #yTable tfoot { filter:blur(7px); }
+body.privacy #appWrap .debtNums input, body.privacy #appWrap .debtExtra input, body.privacy #appWrap .yTop b, body.privacy #appWrap .debtBox, body.privacy #appWrap .subItem .yr, body.privacy #appWrap .subItem .dt, body.privacy #appWrap .txFound b, body.privacy #appWrap #yTable td, body.privacy #appWrap #yTable tfoot { filter:blur(7px); }
 /* seguridad */
 #newPassForm { display:grid; gap:10px; }
 #newPassForm label { font-weight:700; font-size:.88rem; color:var(--muted); display:block; }
@@ -404,7 +404,7 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
 <main class="authWrap" id="authWrap" hidden>
   <section class="authHero">
     <span class="authBadge">💶 Tu dinero, bajo control</span>
-    <h1 class="authTitle">Mi presupuesto</h1>
+    <h1 class="authTitle">AhorroNexo</h1>
     <p class="authLead">Organiza tu salario, apunta tus gastos y mira al instante cuánto te queda cada mes.</p>
     <ul class="authPoints">
       <li>Reparte tu sueldo entre tus gastos del mes</li>
@@ -450,7 +450,7 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
 
 <main class="wrap" id="appWrap" hidden>
 <header>
-<div><h1>Mi presupuesto</h1><p class="sub">Organiza tus ingresos y decide a dónde va cada euro.</p></div>
+<div><h1>AhorroNexo</h1><p class="sub">Organiza tus ingresos y decide a dónde va cada euro.</p></div>
 <div class="userbar">
   <span class="save" id="saveStatus">✓ Guardado en la nube</span>
   <span class="email" id="userEmail"></span>
@@ -1283,7 +1283,6 @@ document.querySelectorAll('.toggle').forEach(btn => {
     "Mínimo 8 caracteres": ["Minimo 8 caratteri", "At least 8 characters"],
     "Sin conexión": ["Offline", "Offline"],
     "💶 Tu dinero, bajo control": ["💶 I tuoi soldi, sotto controllo", "💶 Your money, under control"],
-    "Mi presupuesto": ["Il mio budget", "My Budget"],
     "Organiza tu salario, apunta tus gastos y mira al instante cuánto te queda cada mes.": ["Organizza il tuo stipendio, annota le spese e guarda subito quanto ti resta ogni mese.", "Organise your salary, log your expenses and instantly see how much you have left each month."],
     "Reparte tu sueldo entre tus gastos del mes": ["Ripartisci lo stipendio tra le spese del mese", "Split your pay across the month's expenses"],
     "Guardado en la nube: entra desde cualquier dispositivo": ["Salvato nel cloud: accedi da qualsiasi dispositivo", "Saved in the cloud: sign in from any device"],
@@ -1460,7 +1459,7 @@ document.querySelectorAll('.toggle').forEach(btn => {
         el.__trA[a] = t;
       });
     });
-    document.title = tr("Mi presupuesto");
+    document.title = "AhorroNexo";
     document.documentElement.lang = lang;
   }
   var OPTS = { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS };
@@ -1486,9 +1485,9 @@ document.querySelectorAll('.toggle').forEach(btn => {
 
   // ---- compartir ----
   var MSG = {
-    es: { title: "Mi presupuesto", text: "Te recomiendo Mi presupuesto para organizar tu salario y tus gastos cada mes:" },
-    it: { title: "Il mio budget", text: "Ti consiglio Il mio budget per organizzare stipendio e spese ogni mese:" },
-    en: { title: "My Budget", text: "Check out My Budget to organise your salary and expenses each month:" }
+    es: { title: "AhorroNexo", text: "Te recomiendo AhorroNexo para organizar tu salario y tus gastos cada mes:" },
+    it: { title: "AhorroNexo", text: "Ti consiglio AhorroNexo per organizzare stipendio e spese ogni mese:" },
+    en: { title: "AhorroNexo", text: "Check out AhorroNexo to organise your salary and expenses each month:" }
   };
   var shareBtn = document.getElementById("shareBtn");
   var menu = document.getElementById("shareMenu");
