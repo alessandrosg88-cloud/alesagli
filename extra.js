@@ -30,7 +30,7 @@ const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls)
 let X = null;            // { v, u, tx:[], meta:{}, incomes:[], goals:[], history:{} }
 let xMode = 'cloud';     // 'cloud' | 'local'
 let selMonth = curMonth();
-const uid = () => currentUser && currentUser.id;
+const uid = () => currentUser && sb.dataOwner();
 function blankX(){ return { v:1, u:0, tx:[], meta:{}, incomes:[], goals:[], history:{}, subIgnore:[], debts:[], debtCfg:{}, worth:{} }; }
 function normX(d){
   const b = blankX();

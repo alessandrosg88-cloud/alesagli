@@ -300,10 +300,14 @@
       var q = this;
       return run(q).then(function (data) { return { data: data, error: null }; }, function (e) { return { data: null, error: { message: e.message, code: e.code } }; }).then(res, rej);
     };
+    // Presupuesto compartido: si la persona se ha unido al presupuesto de otra cuenta, las tablas se leen y
+    // escriben en la carpeta de esa cuenta (las reglas de Firestore solo lo permiten a sus miembros).
+    var dataOwner = null;
     async function run(q) {
-      var uid = api.uid();
-      if (!uid) throw NubeError('Not signed in', 'NO_SESSION');
-      if (q.f.user_id !== undefined && q.f.user_id !== uid) throw NubeError('Permission denied', 'PERMISSION_DENIED');
+      var me = api.uid();
+      if (!me) throw NubeError('Not signed in', 'NO_SESSION');
+      var uid = dataOwner || me;
+      if (q.f.user_id !== undefined && q.f.user_id !== uid && q.f.user_id !== me) throw NubeError('Permission denied', 'PERMISSION_DENIED');
       if (SINGLE.indexOf(q.t) >= 0) {
         var path = 'users/' + uid + '/tablas/' + q.t;
         if (q.op === 'select') { var d = await api.getDoc(path); return q.one ? d : (d ? [d] : []); }
@@ -383,7 +387,7 @@
       },
       signOut: async function (o) {
         if (o && o.scope === 'global' && tok) { try { await api.mergeDoc('users/' + tok.uid, { revokedAt: Date.now() }); } catch (e) {} }
-        tok = null; user = null; save();
+        tok = null; user = null; dataOwner = null; save();
         emit('SIGNED_OUT');
         return { error: null };
       },
@@ -410,6 +414,7 @@
       }
     };
 
-    return { auth: auth, from: function (t) { return new Q(t); }, fs: api };
+    return { auth: auth, from: function (t) { return new Q(t); }, fs: api,
+      setDataOwner: function (u) { dataOwner = u || null; }, dataOwner: function () { return dataOwner || api.uid(); } };
   };
 })();

@@ -278,6 +278,16 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .txTags button.sel { background:var(--blue); color:#fff; }
 .txFound { margin:6px 0 0; font-size:.88rem; color:var(--muted); }
 .subH { margin:22px 0 10px; font-size:1rem; }
+.shareBanner { margin:0 0 14px; padding:10px 14px; border-radius:12px; background:#eef3ff; color:var(--blue); font-weight:650; font-size:.9rem; }
+:root[data-theme="dark"] .shareBanner { background:#1d2a4a; }
+.shareRow { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
+.shareCode { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.shareCode b { font-size:1.6rem; letter-spacing:.12em; font-variant-numeric:tabular-nums; background:var(--soft); padding:8px 14px; border-radius:12px; }
+.shareJoin { display:flex; gap:8px; }
+.shareJoin input { flex:1; min-width:0; max-width:220px; border:1px solid var(--line); background:var(--input); color:var(--ink); border-radius:10px; padding:10px 12px; font:inherit; font-weight:700; letter-spacing:.08em; text-transform:uppercase; outline:none; }
+.shareCode + .groupHint { margin-top:8px; }
+.shareMsg { margin:10px 0 0; font-size:.88rem; color:var(--muted); min-height:1.2em; }
+.shareMsg.err { color:var(--danger); }
 #nwChart svg { max-height:200px; }
 #yTable { overflow-x:auto; }
 #yTable td:not(:first-child), #yTable th:not(:first-child) { text-align:right; }
@@ -447,6 +457,7 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
   <button class="logout" id="logout">Cerrar sesión</button>
 </div>
 </header>
+<p class="shareBanner" id="shareBanner" hidden></p>
 <section class="income">
 <div><label for="salary">Ingresos</label><input id="salary" type="text" placeholder="Ej. 1800,50" inputmode="decimal" aria-label="Ingresos">
 <div class="incomeExtra" id="incomeExtra"></div>
@@ -599,6 +610,11 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
   <div id="debtResult"></div>
 </div>
 </section>
+<section class="card" id="shareCard">
+<div class="card-top"><h2><button type="button" class="toggle" data-key="pareja" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>👫 Presupuesto compartido</h2></div>
+<p class="groupHint">Comparte tu presupuesto con tu pareja o con quien vivas: los dos veréis y editaréis los mismos gastos, movimientos, objetivos y deudas, cada uno con su propia cuenta y contraseña.</p>
+<div id="shareBox"></div>
+</section>
 <section class="card collapsed" id="secCard">
 <div class="card-top"><h2><button type="button" class="toggle" data-key="seguridad" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>🔒 Seguridad y privacidad</h2></div>
 <div class="secList">
@@ -689,7 +705,11 @@ const tabLogin = $('#tabLogin'), tabSignup = $('#tabSignup');
 const fixedEl = $('#expensesFixed'), variableEl = $('#expensesVariable');
 let expenseTypes = {}; // { [id]: 'f' | 'v' } se guarda en los datos de tu cuenta
 const typeOf = e => expenseTypes[e.id] === 'v' ? 'v' : 'f';
-function saveTypes(){ return currentUser ? sb.auth.updateUser({ data: { expense_types: expenseTypes } }) : Promise.resolve({}); }
+function saveTypes(){
+  if (!currentUser) return Promise.resolve({});
+  sb.from('budgets').update({ types: Object.assign({}, expenseTypes) }).then(() => {});
+  return sb.dataOwner() === currentUser.id ? sb.auth.updateUser({ data: { expense_types: expenseTypes } }) : Promise.resolve({ error: null });
+}
 
 let mode = 'login'; // 'login' | 'signup'
 let currentUser = null;
@@ -832,9 +852,14 @@ sb.auth.onAuthStateChange((_event, session) => {
     authForm.reset();
     if (loadedForUserId !== currentUser.id) {
       loadedForUserId = currentUser.id;
-      loadUserData();
-      loadSavings();
-      if (typeof loadExtra === 'function') loadExtra();
+      (async () => {
+        // Presupuesto compartido: antes de cargar, mirar si esta cuenta usa el presupuesto de otra.
+        if (typeof resolveShare === 'function') { try { await resolveShare(); } catch (e) {} }
+        if (!currentUser || loadedForUserId !== currentUser.id) return;
+        loadUserData();
+        loadSavings();
+        if (typeof loadExtra === 'function') loadExtra();
+      })();
     }
   } else {
     loadedForUserId = null;
@@ -850,8 +875,9 @@ function typesForDefaults(rows){ const t = {}; (rows || []).forEach((r, i) => { 
 
 async function loadUserData(){
   setStatus('Cargando…', 'saving');
-  const uid = currentUser.id;
-  expenseTypes = Object.assign({}, (currentUser.user_metadata || {}).expense_types);
+  const uid = sb.dataOwner();
+  const shared = uid !== currentUser.id;
+  expenseTypes = shared ? {} : Object.assign({}, (currentUser.user_metadata || {}).expense_types);
 
   window.budgetLoaded = false;
   let budget = null, rows = null, loadErr = null;
@@ -883,6 +909,9 @@ async function loadUserData(){
     budget = { salary: 0 };
   }
 
+  // Los tipos (fijo / variable) se guardan también en el presupuesto, para que los vea quien lo comparte.
+  if (budget.types && typeof budget.types === 'object') expenseTypes = Object.assign({}, budget.types);
+  else if (!shared) sb.from('budgets').update({ types: Object.assign({}, expenseTypes) }).eq('user_id', uid).then(() => {});
   salary = budget.salary || 0;
   expenses = (rows || []).map(r => ({ id: r.id, emoji: r.emoji || '', name: r.name || '', amount: r.amount || 0 }));
   window.budgetLoaded = true;
@@ -891,7 +920,7 @@ async function loadUserData(){
 }
 function cacheBudget(){
   if (!currentUser || !window.budgetLoaded) return;
-  try { localStorage.setItem('alesagli-cache-' + currentUser.id, JSON.stringify({ salary, expenses, types: expenseTypes })); } catch (e) {}
+  try { localStorage.setItem('alesagli-cache-' + sb.dataOwner(), JSON.stringify({ salary, expenses, types: expenseTypes })); } catch (e) {}
 }
 
 function setStatus(text, kind){
@@ -1181,6 +1210,8 @@ document.querySelectorAll('.toggle').forEach(btn => {
     "Extra al mes para deudas": ["Extra al mese per i debiti", "Extra per month for debts"],
     "❄️ Bola de nieve": ["❄️ Palla di neve", "❄️ Snowball"],
     "🏔️ Avalancha": ["🏔️ Valanga", "🏔️ Avalanche"],
+    "👫 Presupuesto compartido": ["👫 Budget condiviso", "👫 Shared budget"],
+    "Comparte tu presupuesto con tu pareja o con quien vivas: los dos veréis y editaréis los mismos gastos, movimientos, objetivos y deudas, cada uno con su propia cuenta y contraseña.": ["Condividi il budget con il tuo partner o con chi vive con te: vedrete e modificherete le stesse spese, movimenti, obiettivi e debiti, ognuno con il proprio account e password.", "Share your budget with your partner or housemate: you'll both see and edit the same expenses, transactions, goals and debts, each with your own account and password."],
     "🛟 Fondo de emergencia para gastos fijos": ["🛟 Fondo di emergenza per le spese fisse", "🛟 Emergency fund for fixed expenses"],
     "Lo que necesitas tener ahorrado para pagar tus gastos fijos durante los meses que elijas, aunque te quedes sin ingresos.": ["Quanto ti serve avere da parte per pagare le spese fisse per i mesi che scegli, anche se resti senza entrate.", "How much you need saved to cover your fixed expenses for the months you choose, even if your income stops."],
     "¿Para cuántos meses?": ["Per quanti mesi?", "For how many months?"],
@@ -1523,6 +1554,7 @@ document.querySelectorAll('.toggle').forEach(btn => {
   obs.observe(document.body, OPTS);
 })();
 </script>
+<script src="pareja.js"></script>
 <script src="extra.js"></script>
 <script src="monedas.js"></script>
 <!-- Aviso de cookies -->
