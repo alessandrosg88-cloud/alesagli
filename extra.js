@@ -31,7 +31,7 @@ let X = null;            // { v, u, tx:[], meta:{}, incomes:[], goals:[], histor
 let xMode = 'cloud';     // 'cloud' | 'local'
 let selMonth = curMonth();
 const uid = () => currentUser && currentUser.id;
-function blankX(){ return { v:1, u:0, tx:[], meta:{}, incomes:[], goals:[], history:{} }; }
+function blankX(){ return { v:1, u:0, tx:[], meta:{}, incomes:[], goals:[], history:{}, subIgnore:[] }; }
 function normX(d){
   const b = blankX();
   d = (d && typeof d === 'object') ? d : {};
@@ -134,7 +134,7 @@ function refreshViews(){
   if (!X) return;
   const it = $('#incomeTotal');
   if (X.incomes.length) { it.hidden = false; it.textContent = t3('Ingresos totales: ', 'Entrate totali: ', 'Total income: ') + money(planNow().inc); } else it.hidden = true;
-  decorateRows(); renderMoves(); renderCharts(); renderBills(); renderTips(); updateGoalsProgress();
+  decorateRows(); renderMoves(); renderCharts(); renderBills(); renderSubs(); renderTips(); updateGoalsProgress();
 }
 
 // ---------- 1 · ingresos extra ----------
@@ -215,7 +215,7 @@ function renderMoves(){
 }
 
 // ---------- 4 · apuntado rápido (botón +) ----------
-let qCat = null;
+let qCat = null, sheetCats = [];
 function openSheet(){
   if (!X) return;
   $('#qAmount').value = ''; $('#qNote').value = ''; $('#qErr').textContent = '';
@@ -223,6 +223,8 @@ function openSheet(){
   $('#qDate').max = today();
   const cats = $('#qCats'); cats.innerHTML = '';
   const list = expenses.slice().sort((a, b) => (typeOf(a) === 'v' ? 0 : 1) - (typeOf(b) === 'v' ? 0 : 1));
+  sheetCats = list;
+  $('#qScanMsg').textContent = '';
   if (qCat == null || !findCat(qCat)) qCat = list.length ? list[0].id : null;
   list.forEach(e => {
     const b = el('button', same(e.id, qCat) ? 'sel' : '', `${esc(e.emoji || '•')} ${esc(e.name || '')}`);
@@ -684,6 +686,167 @@ $('#exportJson').onclick = () => {
   const dump = { exported: new Date().toISOString(), email: currentUser && currentUser.email, income: toNum(salary), expenses: expenses.map(e => ({ emoji:e.emoji, name:e.name, amount:toNum(e.amount), type: typeOf(e) === 'v' ? 'variable' : 'fixed' })), savings, extra: X };
   downloadFile('mis-datos-' + today() + '.json', JSON.stringify(dump, null, 2), 'application/json');
 };
+
+// ---------- 11 · escanear ticket con la cámara (el texto se lee en tu dispositivo: la foto nunca se sube) ----------
+const OCR_CDN = 'https://cdn.jsdelivr.net/npm/';
+let ocrWorker = null, ocrLang = '';
+function loadScript(src){
+  return new Promise((ok, ko) => { if (window.Tesseract) return ok(); const s = document.createElement('script'); s.src = src; s.crossOrigin = 'anonymous'; s.onload = ok; s.onerror = () => ko(new Error('load')); document.head.append(s); });
+}
+async function getOcr(onProgress){
+  const lang = ({ es:'spa', it:'ita', en:'eng' })[LANG()] || 'spa';
+  if (ocrWorker && ocrLang === lang) return ocrWorker;
+  if (ocrWorker) { try { await ocrWorker.terminate(); } catch (e) {} ocrWorker = null; }
+  await loadScript(OCR_CDN + 'tesseract.js@5.1.1/dist/tesseract.min.js');
+  ocrWorker = await Tesseract.createWorker(lang, 1, {
+    workerPath: OCR_CDN + 'tesseract.js@5.1.1/dist/worker.min.js',
+    corePath: OCR_CDN + 'tesseract.js-core@5.1.1',
+    langPath: OCR_CDN + '@tesseract.js-data/' + lang + '/4.0.0_best_int',
+    logger: m => onProgress && onProgress(m)
+  });
+  ocrLang = lang;
+  return ocrWorker;
+}
+// Reduce la foto y la pasa a escala de grises: el reconocimiento es más rápido y más fiable.
+async function prepImage(file){
+  let bmp;
+  try { bmp = await createImageBitmap(file, { imageOrientation:'from-image' }); } catch (e) { bmp = await createImageBitmap(file); }
+  const k = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  const g = c.getContext('2d'); g.filter = 'grayscale(1) contrast(1.35)'; g.drawImage(bmp, 0, 0, c.width, c.height);
+  if (bmp.close) bmp.close();
+  return c;
+}
+// Lee importe total, fecha y comercio del texto del ticket.
+function parseReceipt(text){
+  const lines = String(text || '').replace(/(\d)\s*([.,])\s*(\d{2})(?!\d)/g, '$1$2$3').split(/\n/).map(l => l.trim()).filter(Boolean);
+  const amts = l => (l.match(/\d{1,5}(?:[.,]\d{3})*[.,]\d{2}(?!\d)/g) || []).map(parseAmt).filter(n => n > 0 && n < 100000);
+  const TOT = /\b(total|importe|a pagar|totale|tot\.?|suma|amount due|grand total)\b/i;
+  const NOT = /sub ?-?total|base|imponible|\biva\b|\bi\.v\.a|cuota|cambio|devol|entregad|ahorr|descuento|\bdto\b|punto|resto|vat|tax|resto|art[ií]culos|items/i;
+  const cand = [];
+  lines.forEach((l, i) => {
+    if (!TOT.test(l) || NOT.test(l)) return;
+    let a = amts(l);
+    if (!a.length && lines[i + 1]) a = amts(lines[i + 1]);
+    if (a.length) cand.push(a[a.length - 1]);
+  });
+  let amount = cand.length ? Math.max(...cand) : 0;
+  if (!amount) { const all = lines.flatMap(amts).filter(n => n < 5000); amount = all.length ? Math.max(...all) : 0; }
+  let date = '';
+  const lim = isoDay(new Date(Date.now() - 400 * 864e5));
+  for (const l of lines) {
+    const m = l.match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/) || l.match(/(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})/);
+    const d = m && parseDate(m[0]);
+    if (d && d <= today() && d >= lim) { date = d; break; }
+  }
+  let shop = '';
+  for (const l of lines.slice(0, 6)) {
+    const letters = (l.match(/[a-záéíóúñüàèìòç]/gi) || []).length;
+    if (letters >= 3 && letters / l.length > 0.55 && !/ticket|factura|fra\.|nif|cif|c\/|calle|avda|tel[eé]?f?|www|http|@|^\W*$/i.test(l)) { shop = l.replace(/[^\p{L}\p{N} &'.\-]/gu, '').replace(/\s+/g, ' ').trim(); break; }
+  }
+  if (shop && shop === shop.toUpperCase()) shop = shop.toLowerCase().replace(/(^|\s)\p{L}/gu, c => c.toUpperCase());
+  return { amount: r2(amount), date, shop: shop.slice(0, 60) };
+}
+window.parseReceipt = parseReceipt;   // para pruebas
+function scanMsg(t, err){ const m = $('#qScanMsg'); m.textContent = t; m.className = 'qScanMsg' + (err ? ' err' : ''); }
+$('#qScanBtn').onclick = () => { const f = $('#qScanFile'); f.value = ''; f.click(); };
+$('#qScanFile').onchange = async e => {
+  const file = e.target.files[0]; if (!file) return;
+  const btn = $('#qScanBtn'); btn.disabled = true;
+  scanMsg(t3('Preparando el lector… (la primera vez tarda un poco)', 'Preparo il lettore… (la prima volta ci vuole un po\')', 'Getting the reader ready… (slower the first time)'));
+  try {
+    const img = await prepImage(file);
+    const w = await getOcr(m => { if (m.status === 'recognizing text') scanMsg(t3('Leyendo el ticket… ', 'Leggo lo scontrino… ', 'Reading the receipt… ') + Math.round((m.progress || 0) * 100) + ' %'); });
+    const { data } = await w.recognize(img);
+    const r = parseReceipt(data && data.text);
+    const got = [];
+    if (r.amount > 0) { $('#qAmount').value = fmt2(r.amount); got.push(t3('importe', 'importo', 'amount')); }
+    if (r.date) { $('#qDate').value = r.date; got.push(t3('fecha', 'data', 'date')); }
+    if (r.shop) { $('#qNote').value = r.shop; got.push(t3('comercio', 'negozio', 'shop')); }
+    const c = guessCat(r.shop) || guessCat((data.text || '').slice(0, 300));
+    if (c) { qCat = c; $('#qCats').querySelectorAll('button').forEach((b, i) => b.classList.toggle('sel', same(sheetCats[i] && sheetCats[i].id, c))); }
+    scanMsg(got.length
+      ? t3('✓ He leído: ', '✓ Ho letto: ', '✓ Read: ') + got.join(', ') + t3('. Revísalo antes de guardar.', '. Controlla prima di salvare.', '. Check it before saving.')
+      : t3('No he podido leer el ticket. Prueba con una foto más cerca, recta y con buena luz.', 'Non riesco a leggere lo scontrino. Prova con una foto più vicina, dritta e con buona luce.', 'Couldn\'t read the receipt. Try a closer, straight photo in good light.'), !got.length);
+  } catch (err) {
+    scanMsg(navigator.onLine === false
+      ? t3('Necesitas conexión la primera vez para descargar el lector de tickets.', 'Serve la connessione la prima volta per scaricare il lettore.', 'You need a connection the first time to download the reader.')
+      : t3('No se ha podido leer la foto. Inténtalo de nuevo.', 'Impossibile leggere la foto. Riprova.', 'Couldn\'t read the photo. Please try again.'), true);
+  } finally { btn.disabled = false; }
+};
+
+// ---------- 14 · detectar suscripciones (cargos que se repiten cada mes) ----------
+const SUB_STOP = /\b(compra|compras|pago|pagos|recibo|recibos|tarj(eta)?|card|debit|d[eé]bito|cargo|adeudo|domiciliaci[oó]n|transferencia|bizum|en|de|del|la|el|con|ref|sepa|cuota|mensual|payment|purchase|www|com|es|net|eur|usd|s\.?l\.?|s\.?a\.?|inc|ltd)\b/gi;
+function subKey(n){
+  const w = String(n || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\d+/g, ' ').replace(SUB_STOP, ' ').replace(/[^a-z ]+/g, ' ').split(/\s+/).filter(x => x.length > 1);
+  return w.slice(0, 2).join(' ');
+}
+function median(a){ const s = a.slice().sort((x, y) => x - y), k = s.length >> 1; return s.length % 2 ? s[k] : (s[k - 1] + s[k]) / 2; }
+function detectSubs(){
+  if (!X) return [];
+  const from = addMonths(curMonth(), -6) + '-01';
+  const groups = {};
+  X.tx.forEach(t => { if (t.d < from || !t.n) return; const k = subKey(t.n); if (k.length < 3) return; (groups[k] = groups[k] || []).push(t); });
+  const recent = isoDay(new Date(Date.now() - 45 * 864e5));
+  const out = [];
+  for (const k in groups) {
+    const g = groups[k], med = median(g.map(t => toNum(t.a)));
+    if (!(med > 0)) continue;
+    const same = g.filter(t => Math.abs(toNum(t.a) - med) <= Math.max(0.5, med * 0.15));
+    const months = new Set(same.map(t => t.d.slice(0, 7)));
+    const allMonths = new Set(g.map(t => t.d.slice(0, 7))).size;
+    if (months.size < 2 || g.length > allMonths * 1.5) continue;   // al menos 2 meses y ~1 cargo al mes en ese comercio (descarta el súper)
+    const last = same.map(t => t.d).sort().pop();
+    if (last < recent) continue;                                          // ya no se cobra
+    const lastTx = same.find(t => t.d === last);
+    const amount = r2(toNum(lastTx.a));
+    const day = Math.round(median(same.map(t => Number(t.d.slice(8)))));
+    const name = (lastTx.n || k).replace(/\s+/g, ' ').trim().slice(0, 40);
+    const known = expenses.find(e => typeOf(e) === 'f' && (e.name || '').trim().length >= 3 && (() => { const en = subKey(e.name) || (e.name || '').toLowerCase(); return en && (k.includes(en) || en.includes(k) || k.split(' ')[0] === en.split(' ')[0]); })());
+    out.push({ key:k, name, amount, day, months:months.size, known });
+  }
+  return out.sort((a, b) => (a.known ? 1 : 0) - (b.known ? 1 : 0) || b.amount - a.amount);
+}
+async function addSubAsFixed(s){
+  if (!currentUser) return;
+  setStatus('Guardando…', 'saving');
+  const { data, error } = await sb.from('expenses').insert({ user_id: currentUser.id, emoji: '🔁', name: s.name, amount: s.amount }).select().single();
+  if (error) { setStatus('Error al guardar', 'error'); return; }
+  expenses.push({ id: data.id, emoji: data.emoji, name: data.name, amount: data.amount });
+  if (s.day) X.meta[data.id] = Object.assign({}, X.meta[data.id], { day: s.day });
+  saveX();
+  render();
+  setStatus('✓ Guardado en la nube', 'ok');
+}
+function renderSubs(){
+  const box = $('#subs'); if (!box) return;
+  box.innerHTML = '';
+  const ign = new Set(X.subIgnore || []);
+  const list = detectSubs().filter(s => !ign.has(s.key));
+  const yearly = list.reduce((s, x) => s + x.amount * 12, 0);
+  $('#subsMini').textContent = money(yearly);
+  if (!list.length) {
+    $('#subsInfo').textContent = t3('Aún no vemos cargos que se repitan cada mes. Cuando apuntes o importes los movimientos de tu banco de un par de meses, aquí aparecerán tus suscripciones y cuánto te cuestan al año.', 'Non vediamo ancora addebiti che si ripetono ogni mese. Quando annoterai o importerai i movimenti di un paio di mesi, qui appariranno i tuoi abbonamenti e quanto ti costano all\'anno.', 'No monthly repeating charges yet. Once you log or import a couple of months of bank transactions, your subscriptions and their yearly cost will show up here.');
+    return;
+  }
+  $('#subsInfo').innerHTML = esc(t3(`Hemos encontrado ${list.length} cargos que se repiten cada mes. En total te cuestan `, `Abbiamo trovato ${list.length} addebiti che si ripetono ogni mese. In totale ti costano `, `We found ${list.length} charges that repeat every month. Together they cost you `)) + '<b>' + esc(money(yearly)) + '</b>' + esc(t3(' al año. ¿Los usas todos?', ' all\'anno. Li usi tutti?', ' a year. Do you use them all?'));
+  list.forEach(s => {
+    const r = el('div', 'sub' + (s.known ? ' known' : ''));
+    r.innerHTML = `<span class="em">🔁</span><div style="min-width:0"><div class="nm" title="${esc(s.name)}">${esc(s.name)}</div><div class="dt">${esc(money(s.amount) + t3(' al mes · ', ' al mese · ', ' a month · ') + t3(`visto en ${s.months} meses · suele cobrarse el día ${s.day}`, `visto in ${s.months} mesi · di solito il giorno ${s.day}`, `seen in ${s.months} months · usually on day ${s.day}`))}</div></div><div class="yr">${esc(money(s.amount * 12))}<small>${esc(t3('al año', 'all\'anno', 'a year'))}</small></div><div class="acts"></div>`;
+    const acts = r.querySelector('.acts');
+    if (s.known) acts.append(el('span', 'dt', esc('✓ ' + t3('Ya está en tus gastos fijos como «', 'È già nelle spese fisse come «', 'Already in your fixed expenses as «') + (s.known.name || '') + '»')));
+    else {
+      const add = el('button', 'add', esc(t3('Añadir a gastos fijos', 'Aggiungi alle spese fisse', 'Add to fixed expenses'))); add.type = 'button';
+      add.onclick = async () => { add.disabled = true; await addSubAsFixed(s); };
+      acts.append(add);
+    }
+    const no = el('button', 'ghost', esc(s.known ? t3('Ocultar', 'Nascondi', 'Hide') : t3('No es una suscripción', 'Non è un abbonamento', 'Not a subscription'))); no.type = 'button';
+    no.onclick = () => { X.subIgnore = (X.subIgnore || []).concat(s.key); saveX(); renderSubs(); };
+    acts.append(no);
+    box.append(r);
+  });
+}
 
 // ---------- extras: modo oscuro, instalar app, cambiar idioma ----------
 const bar = document.querySelector('.lang-bar');

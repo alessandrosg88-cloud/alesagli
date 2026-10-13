@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mi presupuesto</title>
 <!-- Seguridad: limita desde dónde se pueden cargar scripts, estilos y conexiones -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://nhhskvauwdudhojjvodi.supabase.co https://api.pwnedpasswords.com https://open.er-api.com https://ve.dolarapi.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://nhhskvauwdudhojjvodi.supabase.co https://api.pwnedpasswords.com https://open.er-api.com https://ve.dolarapi.com https://cdn.jsdelivr.net; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="Organiza tus ingresos, apunta tus gastos y mira al instante cuánto te queda cada mes.">
 <link rel="manifest" href="manifest.webmanifest">
@@ -255,6 +255,19 @@ button:disabled { opacity:.6; cursor:not-allowed; transform:none; }
 .qRow label { font-size:.82rem; font-weight:700; color:var(--muted); }
 .qRow input { display:block; width:100%; margin-top:5px; border:1px solid var(--line); background:var(--input); color:var(--ink); border-radius:10px; padding:10px; font:inherit; outline:none; }
 .qBtns { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+.qScan { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:-4px 0 12px; }
+.qScan button { padding:8px 14px; font-size:.9rem; }
+.qScanMsg { color:var(--muted); font-size:.84rem; }
+.qScanMsg.err { color:var(--danger); }
+.sub { display:grid; grid-template-columns:34px 1fr auto; gap:10px; align-items:center; padding:10px 6px; border-bottom:1px solid var(--line); }
+.sub .em { width:34px; height:34px; display:grid; place-items:center; background:var(--soft); border-radius:10px; }
+.sub .nm { font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sub .dt { color:var(--muted); font-size:.82rem; }
+.sub .yr { font-weight:750; text-align:right; white-space:nowrap; }
+.sub .yr small { display:block; color:var(--muted); font-weight:600; font-size:.75rem; }
+.sub .acts { grid-column:2 / -1; display:flex; gap:8px; flex-wrap:wrap; }
+.sub .acts button { padding:6px 12px; font-size:.82rem; }
+.sub.known { opacity:.75; }
 .qErr { color:var(--danger); font-size:.85rem; min-height:1.2em; margin:8px 0 0; }
 .impTable { max-height:52vh; overflow:auto; border:1px solid var(--line); border-radius:12px; }
 .impTable table { width:100%; border-collapse:collapse; font-size:.85rem; }
@@ -458,6 +471,11 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
 <p class="groupHint" id="billsInfo"></p>
 <div id="bills"></div>
 </section>
+<section class="card" id="subsCard">
+<div class="card-top"><h2><button type="button" class="toggle" data-key="suscripciones" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>🔁 Suscripciones detectadas</h2><div class="miniSum"><span>Al año<b id="subsMini">0,00 €</b></span></div></div>
+<p class="groupHint" id="subsInfo"></p>
+<div id="subs"></div>
+</section>
 <section class="card" id="fundCard">
 <div class="card-top"><h2><button type="button" class="toggle" data-key="fondo" title="Ocultar / mostrar" aria-label="Ocultar / mostrar">▼︎</button>🛟 Fondo de emergencia para gastos fijos</h2><div class="miniSum"><span>Necesitas<b id="fundMini">0,00 €</b></span></div></div>
 <p class="groupHint">Lo que necesitas tener ahorrado para pagar tus gastos fijos durante los meses que elijas, aunque te quedes sin ingresos.</p>
@@ -524,6 +542,7 @@ body.privacy #appWrap strong, body.privacy #appWrap .groupTotal, body.privacy #a
 <div class="sheetBack" id="sheetBack" hidden>
   <form class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <h3 id="sheetTitle">Apuntar un gasto</h3>
+    <div class="qScan"><button type="button" class="ghost" id="qScanBtn">📷 Escanear ticket</button><input type="file" id="qScanFile" accept="image/*" hidden><span class="qScanMsg" id="qScanMsg" aria-live="polite"></span></div>
     <input class="qAmount" id="qAmount" inputmode="decimal" placeholder="0,00 €" aria-label="Importe" autocomplete="off">
     <div class="qCats" id="qCats"></div>
     <div class="qRow"><label>Fecha<input type="date" id="qDate" required></label><label>Nota<input id="qNote" maxlength="120" placeholder="Opcional" autocomplete="off"></label></div>
